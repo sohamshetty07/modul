@@ -1,0 +1,38 @@
+{
+  "components/tools/bg-remover.tsx -> @imgly/background-removal": {
+    "id": "components/tools/bg-remover.tsx -> @imgly/background-removal",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_imgly_background-removal_dist_index_mjs.js"
+    ]
+  },
+  "node_modules/@imgly/background-removal/dist/index.mjs -> onnxruntime-web": {
+    "id": "node_modules/@imgly/background-removal/dist/index.mjs -> onnxruntime-web",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_onnxruntime-web_dist_ort_bundle_min_mjs.js"
+    ]
+  },
+  "node_modules/@imgly/background-removal/dist/index.mjs -> onnxruntime-web/webgpu": {
+    "id": "node_modules/@imgly/background-removal/dist/index.mjs -> onnxruntime-web/webgpu",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_onnxruntime-web_dist_ort_webgpu_bundle_min_mjs.js"
+    ]
+  },
+  "node_modules/jspdf/dist/jspdf.es.min.js -> canvg": {
+    "id": "node_modules/jspdf/dist/jspdf.es.min.js -> canvg",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_canvg_lib_index_es_js.js"
+    ]
+  },
+  "node_modules/jspdf/dist/jspdf.es.min.js -> dompurify": {
+    "id": "node_modules/jspdf/dist/jspdf.es.min.js -> dompurify",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_dompurify_dist_purify_es_mjs.js"
+    ]
+  },
+  "node_modules/jspdf/dist/jspdf.es.min.js -> html2canvas": {
+    "id": "node_modules/jspdf/dist/jspdf.es.min.js -> html2canvas",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_html2canvas_dist_html2canvas_js.js"
+    ]
+  }
+}
