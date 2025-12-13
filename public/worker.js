@@ -1,17 +1,17 @@
 import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.15.1';
 
-// SAFARI / iOS / Single-Thread FIX:
-// We use v2.15.1 (stable version) and apply aggressive single-thread settings.
+// ULTIMATE iOS/SAFARI FIX:
+// We use v2.15.1 (stable) and apply the most aggressive single-thread, non-shared memory settings.
 env.allowLocalModels = false;
 env.useBrowserCache = true;
-env.backends.onnx.wasm.numThreads = 1; // CRITICAL: Forces single-thread
-env.backends.onnx.wasm.proxy = false; // CRITICAL: Disables worker-within-worker
-// CRITICAL FOR IOS/SAFARI: Prevents SharedArrayBuffer use which is blocked
+env.backends.onnx.wasm.numThreads = 1; // Forces single-thread
+env.backends.onnx.wasm.proxy = false; // Disables worker-within-worker
+// CRITICAL FOR iOS/Mobile: Manually force the memory model to non-shared
 env.backends.onnx.wasm.init = () => ({
     initialized: true,
     wasm: true,
-    // Set memory model to single-page to avoid SharedArrayBuffer conflict
-    memory: { 'shared': false }
+    // Set memory model to single-page to avoid SharedArrayBuffer conflicts blocked by iOS
+    memory: { 'shared': false } 
 });
 
 class PipelineSingleton {
