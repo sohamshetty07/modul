@@ -41,7 +41,7 @@ export default function BgRemover() {
     if (!file) return;
     setIsProcessing(true);
     setError(null);
-    setStatusText("Initializing AI Engine...");
+    setStatusText("Connecting to AI Engine...");
 
     try {
       const imgly: any = await import("@imgly/background-removal");
@@ -51,18 +51,16 @@ export default function BgRemover() {
       if (typeof runModel !== 'function') runModel = imgly;
 
       const config = {
-        // FIXED: Switched from static.img.ly to jsDelivr CDN to fix DNS/404 errors
-        publicPath: "https://cdn.jsdelivr.net/npm/@imgly/background-removal-data@1.0.6/dist/",
+        // FIXED: Point to your LOCAL public folder. 
+        // Note the trailing slash is important!
+        publicPath: "/models/", 
+        
         progress: (key: string, current: number, total: number) => {
-             // Avoid dividing by zero if total is 0
              const percent = total > 0 ? Math.round((current / total) * 100) : 0;
-             setStatusText(`Downloading Model: ${percent}%`);
+             setStatusText(`Loading Neural Engine: ${percent}%`);
         },
         debug: true,
-        // Helper to handle fetch errors
-        fetch: (url: string, options: any) => {
-            return fetch(url, { ...options, mode: 'cors' });
-        }
+        // No special fetch needed since it's local!
       };
 
       // @ts-ignore
@@ -74,7 +72,8 @@ export default function BgRemover() {
       setStatusText("Done!");
     } catch (err: any) {
       console.error(err);
-      setError(`Failed to load AI model. Please check your internet connection.`);
+      // More helpful error message
+      setError("Network Error: Could not download AI model. Please check your internet connection.");
     } finally {
       setIsProcessing(false);
     }
