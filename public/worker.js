@@ -1,4 +1,4 @@
-import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.15.1';
+import { pipeline, env } from '/transformers.min.js';
 
 // ULTIMATE iOS/SAFARI FIX:
 env.allowLocalModels = false;
