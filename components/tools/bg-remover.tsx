@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
-import { Image as ImageIcon, Upload, X, Download, Loader2, Sparkles, Layers, Pencil, Check, Copy, RefreshCw } from "lucide-react";
+import { Upload, X, Download, Loader2, Sparkles, Layers, Pencil, Check, Copy, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast"; 
@@ -10,7 +10,7 @@ import { toast } from "@/hooks/use-toast";
 export default function BgRemover() {
   const [file, setFile] = useState<File | null>(null);
   const [processedImage, setProcessedImage] = useState<string | null>(null);
-  const [processedBlob, setProcessedBlob] = useState<Blob | null>(null); // NEW: Store the raw data
+  const [processedBlob, setProcessedBlob] = useState<Blob | null>(null); 
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [statusText, setStatusText] = useState("");
@@ -41,7 +41,7 @@ export default function BgRemover() {
     if (!file) return;
     setIsProcessing(true);
     setError(null);
-    setStatusText("Loading AI Model (this happens once)...");
+    setStatusText("Loading AI Model...");
 
     try {
       const imgly: any = await import("@imgly/background-removal");
@@ -51,10 +51,13 @@ export default function BgRemover() {
       if (typeof runModel !== 'function') runModel = imgly;
 
       const config = {
+        // FIXED: Explicit publicPath to prevent Safari blocking the download
+        publicPath: "https://static.img.ly/background-removal-data/1.0.6/",
         progress: (key: string, current: number, total: number) => {
              const percent = Math.round((current / total) * 100);
              setStatusText(`AI Processing: ${percent}%`);
-        }
+        },
+        debug: true
       };
 
       // @ts-ignore
@@ -62,7 +65,7 @@ export default function BgRemover() {
       const url = URL.createObjectURL(blob);
       
       setProcessedImage(url);
-      setProcessedBlob(blob); // Save the blob immediately!
+      setProcessedBlob(blob); 
       setStatusText("Done!");
     } catch (err: any) {
       console.error(err);
@@ -84,10 +87,8 @@ export default function BgRemover() {
   };
 
   const handleCopy = async () => {
-    if (!processedBlob) return; // Use the stored blob
+    if (!processedBlob) return; 
     try {
-        // Safari Requirement: This must happen directly in the click handler
-        // We use the blob we already have, so it's instant.
         await navigator.clipboard.write([
             new ClipboardItem({ [processedBlob.type]: processedBlob })
         ]);
@@ -182,14 +183,10 @@ export default function BgRemover() {
           {/* Result Area */}
           <div className="space-y-4">
             <div className={`relative h-80 rounded-3xl border-2 transition-all flex flex-col items-center justify-center overflow-hidden
-                ${processedImage ? "border-green-500/50 bg-[url('/checker-dark.png')]" : "border-slate-800 bg-slate-900/20 border-dashed"}
+                ${processedImage ? "border-green-500/50 bg-[url('https://media.discordapp.net/attachments/1008571060670967858/1129424751417536552/transparent-pattern.png?width=400&height=400')] bg-repeat" : "border-slate-800 bg-slate-900/20 border-dashed"}
             `}>
                 {processedImage ? (
-                    <>
-                            <div className="absolute inset-0 opacity-20" 
-                                style={{ backgroundImage: 'radial-gradient(#475569 1px, transparent 1px)', backgroundSize: '10px 10px' }} 
-                            />
-                            
+                    <>  
                             <img 
                                 src={processedImage} 
                                 alt="Processed" 
