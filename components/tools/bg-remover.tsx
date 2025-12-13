@@ -51,16 +51,14 @@ export default function BgRemover() {
       if (typeof runModel !== 'function') runModel = imgly;
 
       const config = {
-        // FIXED: Point to your LOCAL public folder. 
-        // Note the trailing slash is important!
-        publicPath: "/models/", 
+        // FIXED: Point to the local folder (must end with slash)
+        publicPath: `${window.location.origin}/models/`, 
         
         progress: (key: string, current: number, total: number) => {
              const percent = total > 0 ? Math.round((current / total) * 100) : 0;
              setStatusText(`Loading Neural Engine: ${percent}%`);
         },
-        debug: true,
-        // No special fetch needed since it's local!
+        debug: true
       };
 
       // @ts-ignore
