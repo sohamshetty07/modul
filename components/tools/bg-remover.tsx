@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { Upload, X, Download, Loader2, Sparkles, Layers, Pencil, Check, Copy, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,11 +15,18 @@ export default function BgRemover() {
   const [error, setError] = useState<string | null>(null);
   const [statusText, setStatusText] = useState("");
   
-  // Renaming State
   const [fileNameDisplay, setFileNameDisplay] = useState("");
   const [isRenaming, setIsRenaming] = useState(false);
 
-  // Dropzone logic
+  // FIXED: Helper to get the full website URL safely (prevents window undefined errors)
+  const [baseUrl, setBaseUrl] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setBaseUrl(window.location.origin);
+    }
+  }, []);
+
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
       const f = acceptedFiles[0];
@@ -50,14 +57,9 @@ export default function BgRemover() {
       if (typeof runModel !== 'function') runModel = imgly.removeBackground;
       if (typeof runModel !== 'function') runModel = imgly;
 
-      // FIXED: 1. Dynamic Absolute URL (Fixes Worker Error)
-      // FIXED: 2. Pointing to '/engine/' (Matches your new folder)
-      const siteUrl = window.location.protocol + "//" + window.location.host;
-      const modelPath = `${siteUrl}/engine/`;
-
+      // FIXED: Use the absolute path + /models/ (matching your postinstall script)
       const config = {
-        publicPath: modelPath, // Must be an absolute path!
-        
+        publicPath: `${baseUrl}/models/`, 
         progress: (key: string, current: number, total: number) => {
              const percent = total > 0 ? Math.round((current / total) * 100) : 0;
              setStatusText(`Processing: ${percent}%`);
@@ -74,7 +76,7 @@ export default function BgRemover() {
       setStatusText("Done!");
     } catch (err: any) {
       console.error(err);
-      setError("Could not process image. Please check console for details.");
+      setError("Error loading AI. Please refresh and try again.");
     } finally {
       setIsProcessing(false);
     }
@@ -100,7 +102,7 @@ export default function BgRemover() {
         toast({ title: "Copied to clipboard!", className: "bg-green-600 text-white border-none" });
     } catch (err) {
         console.error(err);
-        toast({ title: "Failed to copy", description: "Browser prevented copy. Use Download instead.", variant: "destructive" });
+        toast({ title: "Failed to copy", description: "Use Download instead.", variant: "destructive" });
     }
   };
 
@@ -114,8 +116,6 @@ export default function BgRemover() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4">
-      
-      {/* Header Area */}
       <div className="text-center space-y-2">
            <h2 className="text-3xl font-bold text-white flex items-center justify-center gap-2">
                <Sparkles className="text-purple-500" /> 
@@ -125,8 +125,6 @@ export default function BgRemover() {
       </div>
 
       <div className="grid md:grid-cols-2 gap-8 items-start">
-          
-          {/* Input Area */}
           <div className="space-y-4">
              <div 
                 {...getRootProps()} 
@@ -135,13 +133,8 @@ export default function BgRemover() {
                 `}
              >
                 <input {...getInputProps()} />
-                
                 {file ? (
-                    <img 
-                        src={URL.createObjectURL(file)} 
-                        alt="Original" 
-                        className="w-full h-full object-contain p-4"
-                    />
+                    <img src={URL.createObjectURL(file)} alt="Original" className="w-full h-full object-contain p-4"/>
                 ) : (
                     <div className="space-y-4 p-6">
                         <div className="w-16 h-16 mx-auto bg-slate-800 rounded-2xl flex items-center justify-center">
@@ -153,24 +146,15 @@ export default function BgRemover() {
                         </div>
                     </div>
                 )}
-
-                {/* Clear Input Button */}
                 {file && !isProcessing && (
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); resetAll(); }}
-                        className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-red-500/50 rounded-full text-white transition-colors"
-                    >
+                    <button onClick={(e) => { e.stopPropagation(); resetAll(); }} className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-red-500/50 rounded-full text-white transition-colors">
                         <X size={16} />
                     </button>
                 )}
              </div>
 
              {file && !processedImage && (
-                 <Button 
-                    onClick={handleRemoveBg} 
-                    disabled={isProcessing}
-                    className="w-full bg-purple-600 hover:bg-purple-500 h-12 text-lg font-medium"
-                 >
+                 <Button onClick={handleRemoveBg} disabled={isProcessing} className="w-full bg-purple-600 hover:bg-purple-500 h-12 text-lg font-medium">
                     {isProcessing ? (
                         <span className="flex items-center gap-2">
                             <Loader2 className="animate-spin" /> {statusText}
@@ -185,19 +169,12 @@ export default function BgRemover() {
              {error && <p className="text-red-400 text-center text-sm">{error}</p>}
           </div>
 
-          {/* Result Area */}
           <div className="space-y-4">
             <div className={`relative h-80 rounded-3xl border-2 transition-all flex flex-col items-center justify-center overflow-hidden
                 ${processedImage ? "border-green-500/50 bg-[url('https://media.discordapp.net/attachments/1008571060670967858/1129424751417536552/transparent-pattern.png?width=400&height=400')] bg-repeat" : "border-slate-800 bg-slate-900/20 border-dashed"}
             `}>
                 {processedImage ? (
-                    <>  
-                            <img 
-                                src={processedImage} 
-                                alt="Processed" 
-                                className="relative z-10 w-full h-full object-contain p-4 animate-in zoom-in-50 duration-500"
-                            />
-                    </>
+                    <img src={processedImage} alt="Processed" className="relative z-10 w-full h-full object-contain p-4 animate-in zoom-in-50 duration-500"/>
                 ) : (
                     <div className="text-center text-slate-600 space-y-2">
                         <Layers size={48} className="mx-auto opacity-50" />
@@ -205,54 +182,26 @@ export default function BgRemover() {
                     </div>
                 )}
             </div>
-
-            {/* Actions Bar */}
             {processedImage && (
                 <div className="bg-slate-900 rounded-xl p-4 border border-slate-800 space-y-4 animate-in slide-in-from-top-2">
-                    
-                    {/* Rename Input */}
                     <div className="flex items-center gap-2">
                         {isRenaming ? (
                             <div className="flex items-center gap-2 flex-1">
-                                <Input 
-                                    value={fileNameDisplay}
-                                    onChange={(e) => setFileNameDisplay(e.target.value)}
-                                    className="h-8 text-sm bg-slate-950 border-slate-700 text-white"
-                                    autoFocus
-                                />
-                                <Button size="icon" variant="ghost" className="h-8 w-8 text-green-500" onClick={() => setIsRenaming(false)}>
-                                    <Check size={16} />
-                                </Button>
+                                <Input value={fileNameDisplay} onChange={(e) => setFileNameDisplay(e.target.value)} className="h-8 text-sm bg-slate-950 border-slate-700 text-white" autoFocus/>
+                                <Button size="icon" variant="ghost" className="h-8 w-8 text-green-500" onClick={() => setIsRenaming(false)}><Check size={16} /></Button>
                             </div>
                         ) : (
                             <div className="flex items-center gap-2 flex-1 group">
-                                <span className="text-slate-300 font-medium truncate max-w-[200px]" title={fileNameDisplay}>
-                                    {fileNameDisplay}
-                                </span>
-                                <button 
-                                    onClick={() => setIsRenaming(true)} 
-                                    className="text-slate-500 hover:text-orange-500 p-1"
-                                >
-                                    <Pencil size={14} />
-                                </button>
+                                <span className="text-slate-300 font-medium truncate max-w-[200px]" title={fileNameDisplay}>{fileNameDisplay}</span>
+                                <button onClick={() => setIsRenaming(true)} className="text-slate-500 hover:text-orange-500 p-1"><Pencil size={14} /></button>
                             </div>
                         )}
                     </div>
-
-                    {/* Buttons Grid */}
                     <div className="grid grid-cols-2 gap-2">
-                        <Button onClick={handleCopy} variant="secondary" className="bg-slate-800 text-slate-200 hover:bg-slate-700">
-                            <Copy size={16} className="mr-2" /> Copy
-                        </Button>
-                        <Button onClick={handleDownload} className="bg-green-600 hover:bg-green-500 text-white shadow-lg shadow-green-900/20">
-                            <Download size={16} className="mr-2" /> Download
-                        </Button>
+                        <Button onClick={handleCopy} variant="secondary" className="bg-slate-800 text-slate-200 hover:bg-slate-700"><Copy size={16} className="mr-2" /> Copy</Button>
+                        <Button onClick={handleDownload} className="bg-green-600 hover:bg-green-500 text-white shadow-lg shadow-green-900/20"><Download size={16} className="mr-2" /> Download</Button>
                     </div>
-
-                    {/* Start Over */}
-                    <Button onClick={resetAll} variant="ghost" className="w-full text-slate-500 hover:text-red-400 text-xs h-8">
-                        <RefreshCw size={12} className="mr-2" /> Process Another Image
-                    </Button>
+                    <Button onClick={resetAll} variant="ghost" className="w-full text-slate-500 hover:text-red-400 text-xs h-8"><RefreshCw size={12} className="mr-2" /> Process Another Image</Button>
                 </div>
             )}
           </div>
