@@ -1,9 +1,28 @@
+import path from "path";
+import CopyPlugin from "copy-webpack-plugin";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+    // 1. WEBPACK BUILD FIX (Forces AI models to be copied to public/models on Vercel)
+    webpack: (config) => {
+        config.plugins.push(
+            new CopyPlugin({
+                patterns: [
+                    {
+                        from: "node_modules/@imgly/background-removal-data/dist",
+                        to: path.join(process.cwd(), "public/models"),
+                    },
+                ],
+            })
+        );
+        return config;
+    },
+
+    // 2. YOUR EXISTING HEADERS (Security & Caching)
     async headers() {
         return [
             {
-                // 1. GLOBAL SECURITY HEADERS (Essential for FFmpeg & SharedArrayBuffer)
+                // Global Security Headers (Essential for FFmpeg & SharedArrayBuffer)
                 source: '/(.*)',
                 headers: [
                     {
@@ -17,13 +36,12 @@ const nextConfig = {
                 ],
             },
             {
-                // 2. CACHE CONTROL (For your heavy AI & Video engines)
-                // This targets all files inside the /ffmpeg folder and your new transformers file
+                // Cache Control for heavy assets
                 source: '/:path*(ffmpeg|transformers.min.js)',
                 headers: [
                     {
                         key: 'Cache-Control',
-                        value: 'public, max-age=31536000, immutable', // Cache for 1 Year
+                        value: 'public, max-age=31536000, immutable',
                     },
                 ],
             },
