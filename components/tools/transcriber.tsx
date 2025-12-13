@@ -25,7 +25,8 @@ export default function Transcriber() {
 
   useEffect(() => {
     if (!worker.current) {
-      worker.current = new Worker(new URL('/worker.js', document.baseURI), {
+      // Final fix: Using the absolute path string to ensure iOS finds the file
+      worker.current = new Worker('/worker.js', {
         type: 'module'
       });
     }

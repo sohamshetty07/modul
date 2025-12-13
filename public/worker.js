@@ -1,16 +1,14 @@
 import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.15.1';
 
 // ULTIMATE iOS/SAFARI FIX:
-// We use v2.15.1 (stable) and apply the most aggressive single-thread, non-shared memory settings.
 env.allowLocalModels = false;
 env.useBrowserCache = true;
-env.backends.onnx.wasm.numThreads = 1; // Forces single-thread
-env.backends.onnx.wasm.proxy = false; // Disables worker-within-worker
+env.backends.onnx.wasm.numThreads = 1; 
+env.backends.onnx.wasm.proxy = false; 
 // CRITICAL FOR iOS/Mobile: Manually force the memory model to non-shared
 env.backends.onnx.wasm.init = () => ({
     initialized: true,
     wasm: true,
-    // Set memory model to single-page to avoid SharedArrayBuffer conflicts blocked by iOS
     memory: { 'shared': false } 
 });
 
