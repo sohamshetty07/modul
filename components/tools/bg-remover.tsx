@@ -51,12 +51,15 @@ export default function BgRemover() {
       if (typeof runModel !== 'function') runModel = imgly;
 
       const config = {
-        // FIXED: Point to the local folder (must end with slash)
-        publicPath: `${window.location.origin}/models/`, 
+        // FIXED: Use UNPKG which has the correct folder structure (unlike jsDelivr)
+        publicPath: 'https://unpkg.com/@imgly/background-removal-data@1.0.6/dist/',
+        
+        // FIXED: Force CORS mode to satisfy Safari security requirements
+        fetch: (url: string) => fetch(url, { mode: 'cors' }),
         
         progress: (key: string, current: number, total: number) => {
              const percent = total > 0 ? Math.round((current / total) * 100) : 0;
-             setStatusText(`Loading Neural Engine: ${percent}%`);
+             setStatusText(`Downloading AI Model: ${percent}%`);
         },
         debug: true
       };
@@ -70,8 +73,7 @@ export default function BgRemover() {
       setStatusText("Done!");
     } catch (err: any) {
       console.error(err);
-      // More helpful error message
-      setError("Network Error: Could not download AI model. Please check your internet connection.");
+      setError("Failed to load AI model. Please check your internet connection.");
     } finally {
       setIsProcessing(false);
     }
