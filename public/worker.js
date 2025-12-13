@@ -1,3 +1,7 @@
+// NOTE: We import from a local file because the CDN version is blocked 
+// by the strict COEP headers required for FFmpeg. 
+// DO NOT switch back to CDN without verifying headers first.
+
 import { pipeline, env } from '/transformers.min.js';
 
 // ULTIMATE iOS/SAFARI FIX:

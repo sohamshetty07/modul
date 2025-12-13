@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
-import { Upload, FileAudio, Loader2, Copy, Download, RefreshCw, Music, Mic, Square, StopCircle } from "lucide-react";
+import { Upload, FileAudio, Loader2, Copy, Download, RefreshCw, Music, Mic, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,7 +11,9 @@ import { toast } from "@/hooks/use-toast";
 export default function Transcriber() {
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading_model" | "decoding" | "done" | "error">("idle");
+  
+  // REFACTORED STATUS: Added 'initiating' for better cold-start feedback
+  const [status, setStatus] = useState<"idle" | "initiating" | "loading_model" | "decoding" | "done" | "error">("idle");
   const [progress, setProgress] = useState(0);
   
   // Recording State
@@ -34,9 +36,17 @@ export default function Transcriber() {
     const onMessage = (e: MessageEvent) => {
       const { status, progress, output, error } = e.data;
       
-      if (status === 'initiate') setStatus('loading_model');
-      if (status === 'progress') setProgress(progress);
-      if (status === 'decoding') setStatus('decoding');
+      // GRANULAR FEEDBACK HANDLERS
+      if (status === 'initiate') {
+          setStatus('initiating');
+      }
+      if (status === 'progress') {
+          setStatus('loading_model'); // Switch to download view
+          setProgress(progress);
+      }
+      if (status === 'decoding') {
+          setStatus('decoding');
+      }
       if (status === 'complete') {
           setResult(output);
           setStatus('done');
@@ -113,7 +123,7 @@ export default function Transcriber() {
       return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // UNIFIED PROCESSING LOGIC (Handles Uploads & Recordings)
+  // UNIFIED PROCESSING LOGIC
   const processFile = async (inputAudio: File) => {
       setFile(inputAudio);
       setResult("");
@@ -122,7 +132,8 @@ export default function Transcriber() {
       if (!worker.current) return;
       
       try {
-          setStatus("loading_model");
+          // Reset to 'initiating' immediately so user sees "Booting..." first
+          setStatus("initiating");
           
           const arrayBuffer = await inputAudio.arrayBuffer();
           const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -188,7 +199,6 @@ export default function Transcriber() {
                 {!isRecording && <input {...getInputProps()} />}
                 
                 {isRecording ? (
-                    // RECORDING STATE
                     <div className="space-y-4 animate-pulse">
                          <div className="w-20 h-20 mx-auto bg-red-500/20 text-red-500 rounded-full flex items-center justify-center border border-red-500/50">
                              <Mic size={40} />
@@ -199,7 +209,6 @@ export default function Transcriber() {
                          </div>
                     </div>
                 ) : file ? (
-                    // FILE LOADED STATE
                     <div className="space-y-4">
                          <div className="w-16 h-16 mx-auto bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center">
                              <FileAudio size={32} />
@@ -207,7 +216,6 @@ export default function Transcriber() {
                          <p className="font-medium text-slate-200 truncate max-w-[200px]">{file.name}</p>
                     </div>
                 ) : (
-                    // IDLE STATE
                     <div className="space-y-4 p-6">
                         <div className="w-16 h-16 mx-auto bg-slate-800 rounded-2xl flex items-center justify-center">
                             <Upload className="text-slate-400" size={32} />
@@ -238,24 +246,34 @@ export default function Transcriber() {
                  </Button>
              )}
 
+             {/* NEW: Initiating State (Booting Engine) */}
+             {status === 'initiating' && (
+                 <Button disabled className="w-full bg-slate-800 text-blue-400 h-12">
+                     <Loader2 className="animate-spin mr-2" /> Booting Neural Engine...
+                 </Button>
+             )}
+
+             {/* NEW: Loading Model State (Downloading with %) */}
              {status === 'loading_model' && (
-                 <div className="space-y-2">
-                     <div className="flex justify-between text-xs text-slate-400">
-                         <span>Loading AI Model...</span>
+                 <div className="space-y-2 animate-in fade-in">
+                     <div className="flex justify-between text-xs text-slate-400 uppercase tracking-wider">
+                         <span>Downloading AI Model</span>
                          <span>{Math.round(progress)}%</span>
                      </div>
-                     <Progress value={progress} className="h-2" />
+                     {/* Added transition class for smooth filling */}
+                     <Progress value={progress} className="h-2 transition-all duration-300 ease-out" />
+                     <p className="text-xs text-slate-500 text-center pt-1">This happens only once per session.</p>
                  </div>
              )}
 
              {status === 'decoding' && (
-                 <Button disabled className="w-full bg-slate-800 text-blue-400 h-12">
-                     <Loader2 className="animate-spin mr-2" /> Deciphering Audio...
+                 <Button disabled className="w-full bg-slate-800 text-green-400 h-12">
+                     <Loader2 className="animate-spin mr-2" /> Transcribing Audio...
                  </Button>
              )}
           </div>
 
-          {/* Output Area (Same as before) */}
+          {/* Output Area */}
           <div className="space-y-4">
                <div className="relative">
                    <Textarea 
@@ -266,7 +284,7 @@ export default function Transcriber() {
                    />
                    
                    {status === 'done' && (
-                       <div className="absolute bottom-4 right-4 flex gap-2">
+                       <div className="absolute bottom-4 right-4 flex gap-2 animate-in fade-in zoom-in duration-300">
                            <Button size="icon" variant="secondary" onClick={copyText} className="h-8 w-8 bg-slate-800 hover:bg-slate-700 text-slate-200">
                                <Copy size={14} />
                            </Button>
