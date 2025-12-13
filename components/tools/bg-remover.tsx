@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { Upload, X, Download, Loader2, Sparkles, Layers, Pencil, Check, Copy, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,13 @@ export default function BgRemover() {
   
   const [fileNameDisplay, setFileNameDisplay] = useState("");
   const [isRenaming, setIsRenaming] = useState(false);
+  const [baseUrl, setBaseUrl] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setBaseUrl(window.location.origin);
+    }
+  }, []);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
@@ -39,7 +46,7 @@ export default function BgRemover() {
     if (!file) return;
     setIsProcessing(true);
     setError(null);
-    setStatusText("Initializing Engine...");
+    setStatusText("Loading Local Engine...");
 
     try {
       const imgly: any = await import("@imgly/background-removal");
@@ -49,18 +56,13 @@ export default function BgRemover() {
       if (typeof runModel !== 'function') runModel = imgly;
 
       const config = {
-        // FIXED: Use official CDN to bypass local 404s
-        publicPath: 'https://unpkg.com/@imgly/background-removal-data@1.0.6/dist/',
+        // FIXED: Point to local 'public/models' folder
+        // Since we are same-origin, CORS errors will disappear.
+        publicPath: `${baseUrl}/models/`, 
         
-        // FIXED: Force 'small' model. This prevents the 'isnet_fp16 not found' error
-        model: 'small', 
-
-        // FIXED: Force CORS to satisfy Safari/Chrome security
-        fetch: (url: string) => fetch(url, { mode: 'cors' }),
-
         progress: (key: string, current: number, total: number) => {
              const percent = total > 0 ? Math.round((current / total) * 100) : 0;
-             setStatusText(`Downloading AI: ${percent}%`);
+             setStatusText(`Processing: ${percent}%`);
         },
         debug: true
       };
@@ -74,7 +76,7 @@ export default function BgRemover() {
       setStatusText("Done!");
     } catch (err: any) {
       console.error(err);
-      setError("Failed to load AI. Please check your internet connection.");
+      setError("Error processing image. Check console for details.");
     } finally {
       setIsProcessing(false);
     }
@@ -97,10 +99,10 @@ export default function BgRemover() {
         await navigator.clipboard.write([
             new ClipboardItem({ [processedBlob.type]: processedBlob })
         ]);
-        toast({ title: "Copied to clipboard!", className: "bg-green-600 text-white border-none" });
+        toast({ title: "Copied!", className: "bg-green-600 text-white border-none" });
     } catch (err) {
         console.error(err);
-        toast({ title: "Failed to copy", description: "Use Download instead.", variant: "destructive" });
+        toast({ title: "Copy failed", description: "Use download instead.", variant: "destructive" });
     }
   };
 
@@ -119,7 +121,7 @@ export default function BgRemover() {
                <Sparkles className="text-purple-500" /> 
                Magic Remover
            </h2>
-           <p className="text-slate-400">Remove backgrounds instantly.</p>
+           <p className="text-slate-400">Remove backgrounds instantly (Local Mode).</p>
       </div>
 
       <div className="grid md:grid-cols-2 gap-8 items-start">
