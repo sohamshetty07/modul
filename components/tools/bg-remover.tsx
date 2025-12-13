@@ -51,15 +51,13 @@ export default function BgRemover() {
       if (typeof runModel !== 'function') runModel = imgly;
 
       const config = {
-        // FIXED: Use UNPKG which has the correct folder structure (unlike jsDelivr)
-        publicPath: 'https://unpkg.com/@imgly/background-removal-data@1.0.6/dist/',
-        
-        // FIXED: Force CORS mode to satisfy Safari security requirements
-        fetch: (url: string) => fetch(url, { mode: 'cors' }),
+        // FIXED: Simple relative path. 
+        // The postinstall script guarantees these files exist on Vercel.
+        publicPath: '/models/', 
         
         progress: (key: string, current: number, total: number) => {
              const percent = total > 0 ? Math.round((current / total) * 100) : 0;
-             setStatusText(`Downloading AI Model: ${percent}%`);
+             setStatusText(`Loading AI Model: ${percent}%`);
         },
         debug: true
       };
