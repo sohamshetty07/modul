@@ -41,7 +41,7 @@ export default function BgRemover() {
     if (!file) return;
     setIsProcessing(true);
     setError(null);
-    setStatusText("Connecting to AI Engine...");
+    setStatusText("Initializing Engine...");
 
     try {
       const imgly: any = await import("@imgly/background-removal");
@@ -50,14 +50,17 @@ export default function BgRemover() {
       if (typeof runModel !== 'function') runModel = imgly.removeBackground;
       if (typeof runModel !== 'function') runModel = imgly;
 
+      // FIXED: Generate the absolute URL dynamically
+      // This solves the "Invalid Base URL" error in Web Workers
+      const siteUrl = window.location.protocol + "//" + window.location.host;
+      const modelPath = `${siteUrl}/models/`;
+
       const config = {
-        // FIXED: Simple relative path. 
-        // The postinstall script guarantees these files exist on Vercel.
-        publicPath: '/models/', 
+        publicPath: modelPath, // Must be an absolute path!
         
         progress: (key: string, current: number, total: number) => {
              const percent = total > 0 ? Math.round((current / total) * 100) : 0;
-             setStatusText(`Loading AI Model: ${percent}%`);
+             setStatusText(`Processing: ${percent}%`);
         },
         debug: true
       };
@@ -71,7 +74,7 @@ export default function BgRemover() {
       setStatusText("Done!");
     } catch (err: any) {
       console.error(err);
-      setError("Failed to load AI model. Please check your internet connection.");
+      setError("Could not process image. Please check console for details.");
     } finally {
       setIsProcessing(false);
     }
