@@ -33,20 +33,25 @@ export default function Home() {
     <main className="min-h-screen bg-black text-slate-200 font-sans selection:bg-orange-500/30 pb-20 flex flex-col">
       
       {/* 1. GLOBAL NAVBAR */}
-      <nav className="p-6 flex justify-between items-center max-w-6xl mx-auto w-full border-b border-white/5 bg-black/50 backdrop-blur-md sticky top-0 z-50">
+      <nav className="px-6 py-4 md:py-6 flex justify-between items-center max-w-6xl mx-auto w-full border-b border-white/5 bg-black/50 backdrop-blur-xl sticky top-0 z-50 transition-all">
         <div 
-            className="font-bold text-xl tracking-tighter flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
+            className="font-extrabold text-2xl md:text-3xl tracking-tighter flex items-center gap-0.5 cursor-pointer hover:opacity-80 transition-opacity select-none"
             onClick={goHome}
         >
-            Modul<span className="text-orange-500">.</span>
+            {/* The Logo Text */}
+            Modul
+            {/* The Glowing Dot */}
+            <span className="text-orange-500 drop-shadow-[0_0_8px_rgba(249,115,22,0.8)]">.</span>
         </div>
+        
         <div className="flex items-center gap-4">
              {view !== 'home' && (
                  <Button onClick={goHome} variant="ghost" className="h-8 text-slate-400 hover:text-white">
                     <ArrowLeft className="mr-2 h-4 w-4" /> Studio
                  </Button>
              )}
-             <div className="text-xs font-mono text-slate-600 border border-slate-800 px-2 py-1 rounded hidden sm:block">
+             {/* Version Badge - Hidden on tiny screens, visible on bigger ones */}
+             <div className="text-[10px] font-mono text-slate-500 border border-slate-800/50 bg-slate-900/50 px-2 py-0.5 rounded-full hidden sm:block">
                  v1.0.0
              </div>
         </div>
