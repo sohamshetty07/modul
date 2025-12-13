@@ -1,19 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react"; // 1. Added useEffect
 import Dropzone from "@/components/dashboard/dropzone";
 import FileCard from "@/components/dashboard/file-card";
 import BgRemover from "@/components/tools/bg-remover"; 
 import Transcriber from "@/components/tools/transcriber";
 import PDFTools from "@/components/tools/pdf-tools";
 import ActionsGrid from "@/components/dashboard/actions-grid"; 
-import Hero from "@/components/dashboard/hero"; // Ensure this file exists
+import Hero from "@/components/dashboard/hero"; 
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
 export default function Home() {
-  const [view, setView] = useState("home"); // 'home' | 'convert' | 'remove-bg' | 'transcribe' | 'pdf-tools'
+  const [view, setView] = useState("home"); 
   const [files, setFiles] = useState<File[]>([]);
+
+  // 2. SCROLL RESET FIX: Scroll to top whenever 'view' changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [view]);
 
   // Universal Converter State Logic
   const handleFilesDropped = (newFiles: File[]) => {
@@ -26,21 +31,19 @@ export default function Home() {
 
   const goHome = () => {
       setView("home");
-      setFiles([]); // Clear converter files when leaving
+      setFiles([]); 
   };
 
   return (
     <main className="min-h-screen bg-black text-slate-200 font-sans selection:bg-orange-500/30 pb-20 flex flex-col">
       
-      {/* 1. GLOBAL NAVBAR */}
+      {/* GLOBAL NAVBAR */}
       <nav className="px-6 py-4 md:py-6 flex justify-between items-center max-w-6xl mx-auto w-full border-b border-white/5 bg-black/50 backdrop-blur-xl sticky top-0 z-50 transition-all">
         <div 
             className="font-extrabold text-2xl md:text-3xl tracking-tighter flex items-center gap-0.5 cursor-pointer hover:opacity-80 transition-opacity select-none"
             onClick={goHome}
         >
-            {/* The Logo Text */}
             Modul
-            {/* The Glowing Dot */}
             <span className="text-orange-500 drop-shadow-[0_0_8px_rgba(249,115,22,0.8)]">.</span>
         </div>
         
@@ -50,17 +53,16 @@ export default function Home() {
                     <ArrowLeft className="mr-2 h-4 w-4" /> Studio
                  </Button>
              )}
-             {/* Version Badge - Hidden on tiny screens, visible on bigger ones */}
              <div className="text-[10px] font-mono text-slate-500 border border-slate-800/50 bg-slate-900/50 px-2 py-0.5 rounded-full hidden sm:block">
                  v1.0.0
              </div>
         </div>
       </nav>
 
-      {/* 2. MAIN CONTENT AREA */}
+      {/* MAIN CONTENT AREA */}
       <div className="max-w-5xl mx-auto px-4 w-full flex-1">
         
-        {/* VIEW 1: HOME (LANDING PAGE) */}
+        {/* VIEW 1: HOME */}
         {view === 'home' && (
             <div className="space-y-12">
                 <Hero />
@@ -70,9 +72,10 @@ export default function Home() {
             </div>
         )}
 
-        {/* VIEW 2: UNIVERSAL CONVERTER (Custom Logic) */}
+        {/* VIEW 2: UNIVERSAL CONVERTER */}
         {view === 'convert' && (
-            <div className="space-y-8 py-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            // Reduced top padding from py-10 to py-6 for mobile tightness
+            <div className="space-y-8 py-6 md:py-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="text-center space-y-2">
                     <h2 className="text-3xl font-bold text-white">Universal Converter</h2>
                     <p className="text-slate-400">Convert Video, Audio, and Images locally.</p>
@@ -108,28 +111,28 @@ export default function Home() {
 
         {/* VIEW 3: BG REMOVER */}
         {view === 'remove-bg' && (
-            <div className="py-10">
+            <div className="py-6 md:py-10">
                 <BgRemover />
             </div>
         )}
 
         {/* VIEW 4: TRANSCRIBER */}
         {view === 'transcribe' && (
-            <div className="py-10">
+            <div className="py-6 md:py-10">
                 <Transcriber />
             </div>
         )}
 
         {/* VIEW 5: PDF TOOLS */}
         {view === 'pdf-tools' && (
-            <div className="py-10">
+            <div className="py-6 md:py-10">
                 <PDFTools />
             </div>
         )}
 
       </div>
 
-      {/* 3. GLOBAL FOOTER (Trust Badge) */}
+      {/* GLOBAL FOOTER */}
       <footer className="mt-20 py-10 border-t border-slate-900 text-center space-y-4 bg-black">
             <p className="text-slate-500 text-sm">
                 Built with Next.js, FFmpeg.wasm & Transformers.js
