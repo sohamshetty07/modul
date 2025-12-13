@@ -1,5 +1,6 @@
 "use client";
 
+import TechModal from "@/components/dashboard/tech-modal";
 import { ShieldCheck, Zap, Cpu, Github } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -30,12 +31,15 @@ export default function Hero() {
       </p>
 
       {/* 4. CTA - Made button smaller (h-9) */}
-      <div className="pt-4 flex justify-center gap-4">
+      <div className="pt-4 flex justify-center gap-3">
         <a href="https://github.com/sohamshetty07/modul" target="_blank" rel="noreferrer">
           <Button variant="outline" size="sm" className="gap-2 border-slate-700 bg-slate-900/50 hover:bg-slate-800 text-slate-300 h-9 text-xs">
             <Github size={14} /> Star on GitHub
           </Button>
         </a>
+        
+        {/* The new modal trigger */}
+        <TechModal />
       </div>
     </div>
   );
