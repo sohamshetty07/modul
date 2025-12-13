@@ -172,7 +172,7 @@ export default function Transcriber() {
            <p className="text-slate-400">Convert speech to text locally using OpenAI Whisper.</p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-8 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
           
           {/* Input Area */}
           <div className="space-y-4">

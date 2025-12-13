@@ -442,7 +442,7 @@ export default function PDFTools() {
                          )}
 
                          {/* Rename & Action Row */}
-                         <div className="flex flex-col md:flex-row gap-4 items-end">
+                         <div className="flex flex-col sm:flex-row gap-4 items-end">
                              <div className="flex-1 w-full space-y-2">
                                  <label className="text-xs text-slate-500 font-medium uppercase tracking-wider">Output Filename</label>
                                  <div className="relative">

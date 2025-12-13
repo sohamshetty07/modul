@@ -75,7 +75,7 @@ export default function ActionsGrid({ onSelectTool }: ActionsGridProps) {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-4 max-w-4xl mx-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-4xl mx-auto">
          {filteredTools.map((tool) => (
              <div 
                 key={tool.id}
