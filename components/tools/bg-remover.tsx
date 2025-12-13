@@ -50,10 +50,10 @@ export default function BgRemover() {
       if (typeof runModel !== 'function') runModel = imgly.removeBackground;
       if (typeof runModel !== 'function') runModel = imgly;
 
-      // FIXED: Generate the absolute URL dynamically
-      // This solves the "Invalid Base URL" error in Web Workers
+      // FIXED: 1. Dynamic Absolute URL (Fixes Worker Error)
+      // FIXED: 2. Pointing to '/engine/' (Matches your new folder)
       const siteUrl = window.location.protocol + "//" + window.location.host;
-      const modelPath = `${siteUrl}/models/`;
+      const modelPath = `${siteUrl}/engine/`;
 
       const config = {
         publicPath: modelPath, // Must be an absolute path!
