@@ -41,7 +41,7 @@ export default function BgRemover() {
     if (!file) return;
     setIsProcessing(true);
     setError(null);
-    setStatusText("Loading AI Model...");
+    setStatusText("Initializing AI Engine...");
 
     try {
       const imgly: any = await import("@imgly/background-removal");
@@ -51,13 +51,18 @@ export default function BgRemover() {
       if (typeof runModel !== 'function') runModel = imgly;
 
       const config = {
-        // FIXED: Explicit publicPath to prevent Safari blocking the download
-        publicPath: "https://static.img.ly/background-removal-data/1.0.6/",
+        // FIXED: Switched from static.img.ly to jsDelivr CDN to fix DNS/404 errors
+        publicPath: "https://cdn.jsdelivr.net/npm/@imgly/background-removal-data@1.0.6/dist/",
         progress: (key: string, current: number, total: number) => {
-             const percent = Math.round((current / total) * 100);
-             setStatusText(`AI Processing: ${percent}%`);
+             // Avoid dividing by zero if total is 0
+             const percent = total > 0 ? Math.round((current / total) * 100) : 0;
+             setStatusText(`Downloading Model: ${percent}%`);
         },
-        debug: true
+        debug: true,
+        // Helper to handle fetch errors
+        fetch: (url: string, options: any) => {
+            return fetch(url, { ...options, mode: 'cors' });
+        }
       };
 
       // @ts-ignore
@@ -69,7 +74,7 @@ export default function BgRemover() {
       setStatusText("Done!");
     } catch (err: any) {
       console.error(err);
-      setError(`Error: ${err.message || "Failed to process image."}`);
+      setError(`Failed to load AI model. Please check your internet connection.`);
     } finally {
       setIsProcessing(false);
     }
@@ -95,7 +100,7 @@ export default function BgRemover() {
         toast({ title: "Copied to clipboard!", className: "bg-green-600 text-white border-none" });
     } catch (err) {
         console.error(err);
-        toast({ title: "Failed to copy", description: "Try using Chrome or downloading instead.", variant: "destructive" });
+        toast({ title: "Failed to copy", description: "Browser prevented copy. Use Download instead.", variant: "destructive" });
     }
   };
 
