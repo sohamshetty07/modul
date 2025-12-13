@@ -2,10 +2,11 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
-import { FileText, Trash2, Layers, MoveUp, MoveDown, GripVertical, Pencil, Image as ImageIcon, Minimize2, Scissors, Check, X, Plus } from "lucide-react";
+// ADDED MoveUp and MoveDown back to imports
+import { FileText, Trash2, Layers, GripVertical, Pencil, Image as ImageIcon, Minimize2, Scissors, Check, X, Plus, CheckSquare, Square, MoveUp, MoveDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import { PDFDocument } from "pdf-lib";
 import { jsPDF } from "jspdf";
@@ -13,21 +14,27 @@ import JSZip from "jszip";
 import { toast } from "@/hooks/use-toast";
 import { formatBytes } from "@/core/utils";
 
-// Interface for page thumbnails
+// Interface for page thumbnails (Splitter)
 interface PDFPage {
     index: number;
     url: string;
     selected: boolean;
 }
 
+// Interface for File Management
+interface ManagedFile {
+    id: string; 
+    file: File;
+    selected: boolean; 
+}
+
 export default function PDFTools() {
   const [activeTool, setActiveTool] = useState("merge");
-  const [files, setFiles] = useState<File[]>([]);
-  
-  // New: Track which file is currently active for Split/Preview views
-  const [activeFileIndex, setActiveFileIndex] = useState(0);
+  const [files, setFiles] = useState<ManagedFile[]>([]);
+  const [activeFileId, setActiveFileId] = useState<string | null>(null);
 
   const [isProcessing, setIsProcessing] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [progress, setProgress] = useState(0);
   
   // Settings
@@ -37,24 +44,24 @@ export default function PDFTools() {
   // Splitter State
   const [splitPages, setSplitPages] = useState<PDFPage[]>([]);
 
+  // --- HELPER: Get currently active file object ---
+  const getActiveFile = () => files.find(f => f.id === activeFileId)?.file || null;
+  const getSelectedFiles = () => files.filter(f => f.selected);
+
   // --- PREDICTED SIZE CALCULATOR ---
   const getPredictedSize = () => {
-      if (files.length === 0) return "0 KB";
-      const totalSize = files.reduce((acc, f) => acc + f.size, 0);
-      
-      // Heuristic: PDF Size is mostly images. 
-      // JPEG compression curve is roughly exponential, plus overhead (0.2 constant).
+      const selected = getSelectedFiles();
+      if (selected.length === 0) return "0 KB";
+      const totalSize = selected.reduce((acc, f) => acc + f.file.size, 0);
       const ratio = 0.2 + (0.8 * Math.pow(compressionQuality / 100, 2));
-      const estimated = totalSize * ratio;
-      
-      return formatBytes(estimated);
+      return formatBytes(totalSize * ratio);
   };
 
   // --- THUMBNAIL GENERATION ---
   const generateThumbnails = useCallback(async (file: File) => {
     if (!file) return;
+    setSplitPages([]); 
     try {
-        setSplitPages([]); // Clear previous
         const pdfjsLib = await loadPdfJs();
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
@@ -63,7 +70,7 @@ export default function PDFTools() {
 
         for (let i = 1; i <= totalPages; i++) {
             const page = await pdf.getPage(i);
-            const viewport = page.getViewport({ scale: 0.4 }); // Low scale for speed
+            const viewport = page.getViewport({ scale: 0.3 }); 
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             canvas.width = viewport.width;
@@ -81,41 +88,58 @@ export default function PDFTools() {
 
   // --- EFFECT: Handle File Switching in Split Mode ---
   useEffect(() => {
-      if (activeTool === 'split' && files.length > 0) {
-          generateThumbnails(files[activeFileIndex]);
-          const fname = files[activeFileIndex].name;
-          setOutputName(fname.substring(0, fname.lastIndexOf('.')) + '-split');
+      if (activeTool === 'split' && activeFileId) {
+          const f = getActiveFile();
+          if (f) {
+              generateThumbnails(f);
+              setOutputName(f.name.substring(0, f.name.lastIndexOf('.')) + '-split');
+          }
       }
-  }, [activeFileIndex, activeTool, files.length, generateThumbnails]); // eslint-disable-line
+  }, [activeFileId, activeTool]); // eslint-disable-line
 
   // --- TAB SWITCH HANDLER ---
   const handleToolChange = (newTool: string) => {
       setActiveTool(newTool);
-      // Reset output name based on tool context
-      if (files.length > 0) {
-          const f = files[0];
-          const baseName = f.name.substring(0, f.name.lastIndexOf('.'));
-          if (newTool === 'merge') setOutputName("merged-document");
-          else if (newTool === 'split') setOutputName(baseName + '-split');
-          else setOutputName(baseName);
+      
+      if (newTool === 'merge' || newTool === 'compress') {
+          setFiles(prev => prev.map(f => ({ ...f, selected: true })));
       }
+
+      if ((newTool === 'split' || newTool === 'images') && files.length > 0) {
+          setActiveFileId(files[0].id);
+          const f = files[0].file;
+          const baseName = f.name.substring(0, f.name.lastIndexOf('.'));
+          setOutputName(baseName + (newTool === 'split' ? '-split' : ''));
+      }
+      
+      if (files.length > 0 && newTool === 'merge') setOutputName("merged-document");
   };
 
   // --- DROPZONE ---
   const { getRootProps, getInputProps, isDragActive, open: openDropzone } = useDropzone({
     onDrop: (acceptedFiles) => {
-        // Always append files, never replace (unless user explicitly clears)
-        setFiles((prev) => [...prev, ...acceptedFiles]);
-        if (files.length === 0 && acceptedFiles.length > 0) {
-             const f = acceptedFiles[0];
-             const baseName = f.name.substring(0, f.name.lastIndexOf('.'));
-             if (activeTool === 'merge') setOutputName("merged-document");
-             else setOutputName(baseName);
-        }
+        const newManagedFiles = acceptedFiles.map(f => ({
+            id: Math.random().toString(36).substr(2, 9),
+            file: f,
+            selected: true 
+        }));
+
+        setFiles((prev) => {
+            const combined = [...prev, ...newManagedFiles];
+            if (prev.length === 0 && combined.length > 0) {
+                setActiveFileId(combined[0].id);
+                if (activeTool === 'merge') setOutputName("merged-document");
+                else {
+                    const f = combined[0].file;
+                    setOutputName(f.name.substring(0, f.name.lastIndexOf('.')));
+                }
+            }
+            return combined;
+        });
     },
     accept: { 'application/pdf': ['.pdf'] },
     multiple: true,
-    noClick: files.length > 0 // Disable click on main area if files exist (we use button)
+    noClick: true 
   });
 
   // --- HELPER: Load PDF.js ---
@@ -146,12 +170,21 @@ export default function PDFTools() {
       document.body.removeChild(a);
   };
 
-  const moveFile = (index: number, direction: -1 | 1) => {
+  const toggleFileSelection = (id: string) => {
+      setFiles(prev => prev.map(f => f.id === id ? { ...f, selected: !f.selected } : f));
+  };
+
+  // FIXED: Changed types to 'number' to allow -1 and 1 without strict check issues
+  const moveFile = (index: number, direction: number) => {
       const newFiles = [...files];
-      if (index + direction < 0 || index + direction >= newFiles.length) return;
+      const newIndex = index + direction;
+      
+      // Bounds check
+      if (newIndex < 0 || newIndex >= newFiles.length) return;
+      
       const temp = newFiles[index];
-      newFiles[index] = newFiles[index + direction];
-      newFiles[index + direction] = temp;
+      newFiles[index] = newFiles[newIndex];
+      newFiles[newIndex] = temp;
       setFiles(newFiles);
   };
 
@@ -160,15 +193,16 @@ export default function PDFTools() {
           page.index === index ? { ...page, selected: !page.selected } : page
       ));
   };
-  
+
   // --- ACTION 1: MERGE ---
   const handleMerge = async () => {
-      if (files.length < 2) return;
+      const selected = getSelectedFiles();
+      if (selected.length < 2) return;
       setIsProcessing(true);
       try {
           const mergedPdf = await PDFDocument.create();
-          for (const file of files) {
-              const arrayBuffer = await file.arrayBuffer();
+          for (const item of selected) {
+              const arrayBuffer = await item.file.arrayBuffer();
               const pdf = await PDFDocument.load(arrayBuffer);
               const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
               copiedPages.forEach((page) => mergedPdf.addPage(page));
@@ -182,9 +216,10 @@ export default function PDFTools() {
       } finally { setIsProcessing(false); }
   };
 
-  // --- ACTION 2: COMPRESS (BATCH SUPPORT) ---
+  // --- ACTION 2: COMPRESS ---
   const handleCompress = async () => {
-      if (files.length === 0) return;
+      const selected = getSelectedFiles();
+      if (selected.length === 0) return;
       setIsProcessing(true);
       setProgress(0);
       
@@ -192,18 +227,16 @@ export default function PDFTools() {
       const pdfjsLib = await loadPdfJs();
       
       try {
-          // Process files sequentially
-          for (let fIndex = 0; fIndex < files.length; fIndex++) {
-              const file = files[fIndex];
-              const arrayBuffer = await file.arrayBuffer();
+          for (let fIndex = 0; fIndex < selected.length; fIndex++) {
+              const item = selected[fIndex];
+              const arrayBuffer = await item.file.arrayBuffer();
               const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
               const totalPages = pdf.numPages;
               const newPdf = new jsPDF();
 
               for (let i = 1; i <= totalPages; i++) {
-                  // Calculate global progress
                   const fileProgress = (i / totalPages) * 100;
-                  const totalProgress = ((fIndex * 100) + fileProgress) / files.length;
+                  const totalProgress = ((fIndex * 100) + fileProgress) / selected.length;
                   setProgress(Math.round(totalProgress));
 
                   const page = await pdf.getPage(i);
@@ -225,21 +258,17 @@ export default function PDFTools() {
               
               const compressedBlob = newPdf.output("blob");
               
-              // If single file, download directly
-              if (files.length === 1) {
+              if (selected.length === 1) {
                   downloadBlob(compressedBlob, `${outputName}-compressed.pdf`, "application/pdf");
-                  toast({ title: "Compression Complete", description: `Saved ${formatBytes(file.size - compressedBlob.size)}`, className: "bg-green-600 text-white border-none" });
+                  toast({ title: "Compression Complete", description: `Saved ${formatBytes(item.file.size - compressedBlob.size)}`, className: "bg-green-600 text-white border-none" });
                   setIsProcessing(false);
                   return;
               }
-
-              // If multiple, add to zip
-              zip.file(`${file.name.replace('.pdf', '')}-compressed.pdf`, compressedBlob);
+              zip.file(`${item.file.name.replace('.pdf', '')}-opt.pdf`, compressedBlob);
           }
           
-          // Download Zip
           const content = await zip.generateAsync({ type: "blob" });
-          downloadBlob(content, `${outputName}-compressed-batch.zip`, "application/zip");
+          downloadBlob(content, `${outputName}-batch.zip`, "application/zip");
           toast({ title: "Batch Compression Complete", className: "bg-green-600 text-white border-none" });
 
       } catch (err) {
@@ -250,8 +279,7 @@ export default function PDFTools() {
 
   // --- ACTION 3: TO IMAGES ---
   const handleToImages = async () => {
-    // Basic implementation for single file (files[activeFileIndex])
-    const file = files[activeFileIndex]; 
+    const file = getActiveFile(); 
     if (!file) return;
     setIsProcessing(true); setProgress(0);
     try {
@@ -283,7 +311,7 @@ export default function PDFTools() {
 
   // --- ACTION 4: SPLIT ---
   const handleSplit = async () => {
-      const file = files[activeFileIndex];
+      const file = getActiveFile();
       if (!file) return;
       const selectedPages = splitPages.filter(p => p.selected);
       if (selectedPages.length === 0) return toast({ title: "Select pages first", variant: "destructive" });
@@ -305,11 +333,14 @@ export default function PDFTools() {
       finally { setIsProcessing(false); }
   };
   
-  const selectAll = () => setSplitPages(prev => prev.map(p => ({ ...p, selected: true })));
-  const selectNone = () => setSplitPages(prev => prev.map(p => ({ ...p, selected: false })));
+  const selectAllPages = () => setSplitPages(prev => prev.map(p => ({ ...p, selected: true })));
+  const selectNonePages = () => setSplitPages(prev => prev.map(p => ({ ...p, selected: false })));
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4">
+      {/* GLOBAL INPUT */}
+      <input {...getInputProps()} />
+
       <div className="text-center space-y-2">
            <h2 className="text-3xl font-bold text-white flex items-center justify-center gap-2">
                <FileText className="text-red-500" /> 
@@ -329,15 +360,15 @@ export default function PDFTools() {
             </div>
 
             <div className="space-y-6">
-                 {/* 1. INITIAL DROPZONE (Only if empty) */}
+                 {/* 1. EMPTY STATE */}
                  {files.length === 0 ? (
                      <div 
                         {...getRootProps()} 
+                        onClick={openDropzone} 
                         className={`relative h-56 rounded-3xl border-2 border-dashed transition-all flex flex-col items-center justify-center text-center cursor-pointer overflow-hidden
                             ${isDragActive ? "border-red-500 bg-red-500/10" : "border-slate-800 bg-slate-900/50 hover:bg-slate-800/50"}
                         `}
                      >
-                        <input {...getInputProps()} />
                         <div className="space-y-4">
                              <Layers className="mx-auto text-slate-400" size={32} />
                              <div>
@@ -351,36 +382,39 @@ export default function PDFTools() {
                  ) : (
                      <div className="space-y-4">
                          
-                         {/* --- NEW: FILE SELECTOR FOR SPLIT/IMAGES --- */}
-                         {/* If we have multiple files but are in Split/Image mode, let user pick which one to work on */}
-                         {(activeTool === 'split' || activeTool === 'images') && files.length > 1 && (
+                         {/* TOP: FILE SELECTOR FOR SPLIT/IMAGES */}
+                         {(activeTool === 'split' || activeTool === 'images') && files.length > 0 && (
                              <div className="bg-slate-900/50 border border-slate-800 p-2 rounded-xl flex gap-2 overflow-x-auto">
-                                 {files.map((f, i) => (
+                                 {files.map((f) => (
                                      <button
-                                        key={i}
-                                        onClick={() => setActiveFileIndex(i)}
-                                        className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors
-                                            ${activeFileIndex === i ? 'bg-red-500 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}
+                                        key={f.id}
+                                        onClick={() => setActiveFileId(f.id)}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-2
+                                            ${activeFileId === f.id ? 'bg-red-500 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}
                                         `}
                                      >
-                                         {f.name}
+                                         {f.file.name}
                                      </button>
                                  ))}
+                                 <button onClick={openDropzone} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700">
+                                     <Plus size={14} />
+                                 </button>
                              </div>
                          )}
 
-                         {/* --- SPLIT VIEW (THUMBNAILS) --- */}
-                         {activeTool === 'split' && files[activeFileIndex] && (
+                         {/* SPLIT VIEW (THUMBNAILS) */}
+                         {activeTool === 'split' && getActiveFile() && (
                             <div className="flex flex-col gap-4">
                                 <div className="flex justify-between items-center bg-slate-900 border border-slate-800 p-3 rounded-xl">
-                                    <p className="text-sm text-slate-300 font-medium truncate">{files[activeFileIndex].name} ({splitPages.length} Pgs)</p>
+                                    <p className="text-sm text-slate-300 font-medium truncate">{getActiveFile()?.name} ({splitPages.length} Pgs)</p>
                                     <div className="flex gap-2">
-                                        <Button onClick={selectAll} size="sm" variant="outline" className="h-7 text-xs border-slate-700 text-green-400 hover:text-green-300">All</Button>
-                                        <Button onClick={selectNone} size="sm" variant="outline" className="h-7 text-xs border-slate-700 text-red-400 hover:text-red-300">None</Button>
+                                        <Button onClick={selectAllPages} size="sm" variant="outline" className="h-7 text-xs border-slate-700 text-green-400 hover:text-green-300">All</Button>
+                                        <Button onClick={selectNonePages} size="sm" variant="outline" className="h-7 text-xs border-slate-700 text-red-400 hover:text-red-300">None</Button>
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 pt-2">
-                                    {splitPages.map((page) => (
+                                    {/* FIXED: Added types to map for TypeScript */}
+                                    {splitPages.map((page: PDFPage) => (
                                         <div 
                                             key={page.index} 
                                             onClick={() => togglePageSelection(page.index)}
@@ -398,18 +432,33 @@ export default function PDFTools() {
                             </div>
                          )}
                          
-                         {/* --- LIST VIEW (MERGE / COMPRESS) --- */}
-                         {activeTool !== 'split' && files.map((file, i) => (
-                             <div key={i} className="flex items-center gap-4 p-3 bg-slate-900 border border-slate-800 rounded-xl group hover:border-slate-700 transition-all">
+                         {/* LIST VIEW (MERGE / COMPRESS) */}
+                         {activeTool !== 'split' && files.map((item, i) => (
+                             <div key={item.id} className={`flex items-center gap-4 p-3 bg-slate-900 border rounded-xl group transition-all
+                                ${item.selected ? 'border-blue-500/30' : 'border-slate-800 hover:border-slate-700'}
+                             `}>
+                                 {/* CHECKBOX */}
+                                 {(activeTool === 'merge' || activeTool === 'compress') && (
+                                     <button 
+                                        onClick={() => toggleFileSelection(item.id)}
+                                        className={`shrink-0 ${item.selected ? 'text-blue-500' : 'text-slate-600 hover:text-slate-400'}`}
+                                     >
+                                         {item.selected ? <CheckSquare size={20} /> : <Square size={20} />}
+                                     </button>
+                                 )}
+
                                  {activeTool === 'merge' && (
                                     <div className="text-slate-600 cursor-grab active:cursor-grabbing">
                                         <GripVertical size={16} />
                                     </div>
                                  )}
+                                 
                                  <div className="w-10 h-10 bg-red-500/10 rounded-lg flex items-center justify-center text-red-500 font-bold text-xs">PDF</div>
                                  <div className="flex-1 min-w-0">
-                                     <p className="text-sm font-medium text-slate-200 truncate">{file.name}</p>
-                                     <p className="text-xs text-slate-500">{formatBytes(file.size)}</p>
+                                     <p className={`text-sm font-medium truncate ${item.selected ? 'text-slate-200' : 'text-slate-500'}`}>
+                                         {item.file.name}
+                                     </p>
+                                     <p className="text-xs text-slate-500">{formatBytes(item.file.size)}</p>
                                  </div>
                                  
                                  {activeTool === 'merge' && (
@@ -420,17 +469,17 @@ export default function PDFTools() {
                                  )}
                                  
                                  <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-500 hover:text-red-400 hover:bg-red-950/30" onClick={() => {
-                                     const newFiles = files.filter((_, idx) => idx !== i);
+                                     const newFiles = files.filter(f => f.id !== item.id);
                                      setFiles(newFiles);
-                                     if (newFiles.length === 0) setSplitPages([]); // Cleanup
+                                     if (activeFileId === item.id && newFiles.length > 0) setActiveFileId(newFiles[0].id);
+                                     if (newFiles.length === 0) setSplitPages([]);
                                  }}>
                                      <Trash2 size={16} />
                                  </Button>
                              </div>
                          ))}
                          
-                         {/* --- NEW: MINI DROPZONE (ADD MORE) --- */}
-                         {/* Allows adding more files without clearing the list */}
+                         {/* MINI DROPZONE */}
                          <div 
                             onClick={openDropzone}
                             className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-slate-800 rounded-xl cursor-pointer hover:bg-slate-900/50 hover:border-slate-700 text-slate-500 transition-all"
@@ -453,7 +502,6 @@ export default function PDFTools() {
                                      </div>
                                      <div className="text-right">
                                          <span className="text-blue-400 font-bold text-lg">{compressionQuality}%</span>
-                                         {/* PREDICTED SIZE BADGE */}
                                          <p className="text-xs text-green-400 font-mono mt-1">
                                              Est. Output: ~{getPredictedSize()}
                                          </p>
@@ -471,6 +519,7 @@ export default function PDFTools() {
                                      <Pencil className="absolute right-3 top-2.5 text-slate-500" size={14} />
                                  </div>
                              </div>
+                             
                              <Button 
                                 onClick={() => {
                                     if (activeTool === 'merge') return handleMerge();
@@ -478,14 +527,19 @@ export default function PDFTools() {
                                     if (activeTool === 'images') return handleToImages();
                                     if (activeTool === 'split') return handleSplit();
                                 }}
-                                disabled={isProcessing || (activeTool === 'merge' && files.length < 2)}
+                                disabled={
+                                    isProcessing || 
+                                    (activeTool === 'merge' && getSelectedFiles().length < 2) ||
+                                    (activeTool === 'compress' && getSelectedFiles().length === 0) ||
+                                    (activeTool === 'split' && splitPages.filter(p => p.selected).length === 0)
+                                }
                                 className={`h-10 px-8 font-medium min-w-[140px]
                                     ${activeTool === 'merge' || activeTool === 'split' ? "bg-red-600 hover:bg-red-500" : activeTool === 'compress' ? "bg-blue-600 hover:bg-blue-500" : "bg-yellow-600 hover:bg-yellow-500 text-black"}
                                 `}
                              >
                                  {isProcessing ? `Processing ${progress > 0 ? `${progress}%` : '...'}` : 
-                                    activeTool === 'merge' ? "Merge PDFs" : 
-                                    activeTool === 'compress' ? (files.length > 1 ? `Compress ${files.length} Files` : "Compress PDF") :
+                                    activeTool === 'merge' ? `Merge ${getSelectedFiles().length} PDFs` : 
+                                    activeTool === 'compress' ? `Compress ${getSelectedFiles().length} Files` :
                                     activeTool === 'split' ? "Split PDF" : "Convert to Images"
                                  }
                              </Button>
