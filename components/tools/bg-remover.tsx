@@ -47,31 +47,26 @@ export default function BgRemover() {
     setStatusText("Initializing Engine...");
 
     try {
-      // Dynamic import to avoid SSR issues
       const imgly = await import("@imgly/background-removal");
       
-      // Handle different export structures (ESM/CJS compatibility)
       let runModel = imgly.default;
       // @ts-ignore
       if (typeof runModel !== 'function') runModel = imgly.removeBackground;
       if (typeof runModel !== 'function') runModel = imgly;
 
-      // Robust URL generation
-      const origin = typeof window !== "undefined" ? window.location.origin : "";
-      const modelPath = `${origin}/models/`;
-
       const config: Config = {
-        publicPath: `${window.location.origin}/models/`, // Must have trailing slash
+        // CHANGED: We now point to the high-speed JSDelivr CDN
+        // This solves the Vercel 150MB limit AND the 404 errors.
+        publicPath: 'https://cdn.jsdelivr.net/npm/@imgly/background-removal-data@1.0.1/dist/',
         
-        // PROGRESS TRACKING
         progress: (key: string, current: number, total: number) => {
              const percent = total > 0 ? Math.round((current / total) * 100) : 0;
-             setStatusText(`Loading ${key}: ${percent}%`);
+             setStatusText(`Downloading AI ${percent}%`);
         },
         
-        debug: true, // Keep debug logs in console
-        device: 'cpu', // Safer for broad compatibility
-        model: 'isnet_fp16' // Explicitly use the model we downloaded
+        debug: true,
+        device: 'cpu',
+        model: 'isnet_fp16'
       };
 
       // @ts-ignore
@@ -83,7 +78,7 @@ export default function BgRemover() {
       setStatusText("Done!");
     } catch (err: any) {
       console.error("Full Error Object:", err);
-      setError(`Processing Failed: ${err.message || "Unknown error"}`);
+      setError(`Processing Failed: ${err.message || "Check console"}`);
     } finally {
       setIsProcessing(false);
     }
