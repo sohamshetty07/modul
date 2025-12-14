@@ -47,26 +47,22 @@ export default function BgRemover() {
     setStatusText("Initializing Engine...");
 
     try {
-      const imgly = await import("@imgly/background-removal");
+      // FIXED: Added ': any' to stop the red lines
+      const imgly: any = await import("@imgly/background-removal");
       
       let runModel = imgly.default;
-      // @ts-ignore
       if (typeof runModel !== 'function') runModel = imgly.removeBackground;
       if (typeof runModel !== 'function') runModel = imgly;
 
-      const config: Config = {
-        // FIXED: Pinned to v1.5.0 to bypass CDN 403 Forbidden errors
-        publicPath: 'https://cdn.jsdelivr.net/npm/@imgly/background-removal-data@1.5.0/dist/',
+      const config = {
+        // Using v1.3.0 via Unpkg (No resources.json required)
+        publicPath: 'https://unpkg.com/@imgly/background-removal-data@1.3.0/dist/',
         
         progress: (key: string, current: number, total: number) => {
              const percent = total > 0 ? Math.round((current / total) * 100) : 0;
-             setStatusText(`Downloading AI ${percent}%`);
+             setStatusText(`Downloading ${percent}%`);
         },
-        
         debug: true,
-        device: 'cpu',
-        // We REMOVED the 'model' line. 
-        // We let resources.json decide the best model automatically.
       };
 
       // @ts-ignore
