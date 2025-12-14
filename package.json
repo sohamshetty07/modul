@@ -6,8 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "postinstall": "mkdir -p public/models && cp -r node_modules/@imgly/background-removal-data/dist/* public/models/"
+    "lint": "next lint"
   },
   "dependencies": {
     "@ffmpeg/ffmpeg": "^0.12.10",
