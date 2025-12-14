@@ -55,8 +55,8 @@ export default function BgRemover() {
       if (typeof runModel !== 'function') runModel = imgly;
 
       const config: Config = {
-        // FIXED: Point to 'latest' so we get the missing 'resources.json' file
-        publicPath: 'https://cdn.jsdelivr.net/npm/@imgly/background-removal-data@latest/dist/',
+        // FIXED: Pinned to v1.5.0 to bypass CDN 403 Forbidden errors
+        publicPath: 'https://cdn.jsdelivr.net/npm/@imgly/background-removal-data@1.5.0/dist/',
         
         progress: (key: string, current: number, total: number) => {
              const percent = total > 0 ? Math.round((current / total) * 100) : 0;
@@ -65,7 +65,8 @@ export default function BgRemover() {
         
         debug: true,
         device: 'cpu',
-        model: 'isnet_fp16'
+        // We REMOVED the 'model' line. 
+        // We let resources.json decide the best model automatically.
       };
 
       // @ts-ignore
