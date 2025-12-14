@@ -47,7 +47,6 @@ export default function BgRemover() {
     setStatusText("Initializing Engine...");
 
     try {
-      // FIXED: Added ': any' to stop the red lines
       const imgly: any = await import("@imgly/background-removal");
       
       let runModel = imgly.default;
@@ -55,8 +54,8 @@ export default function BgRemover() {
       if (typeof runModel !== 'function') runModel = imgly;
 
       const config = {
-        // Using v1.3.0 via Unpkg (No resources.json required)
-        publicPath: 'https://unpkg.com/@imgly/background-removal-data@1.3.0/dist/',
+        // FIXED: Switched to JSDelivr (Supports COOP/COEP Headers)
+        publicPath: 'https://cdn.jsdelivr.net/npm/@imgly/background-removal-data@1.3.0/dist/',
         
         progress: (key: string, current: number, total: number) => {
              const percent = total > 0 ? Math.round((current / total) * 100) : 0;
