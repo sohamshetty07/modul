@@ -47,7 +47,6 @@ export default function BgRemover() {
     setStatusText("Initializing Engine...");
 
     try {
-      // @ts-ignore
       const imgly: any = await import("@imgly/background-removal");
       
       let runModel = imgly.default;
@@ -55,10 +54,10 @@ export default function BgRemover() {
       if (typeof runModel !== 'function') runModel = imgly;
 
       const config = {
-        // 1. Keep JSDelivr (It works for headers)
-        publicPath: 'https://cdn.jsdelivr.net/npm/@imgly/background-removal-data@1.3.0/dist/',
+        // 1. Use the NEWEST assets to match your installed library
+        publicPath: 'https://cdn.jsdelivr.net/npm/@imgly/background-removal-data@1.5.0/dist/',
         
-        // 2. THE FIX: The library forces us to use 'medium' instead of the filename
+        // 2. Use 'medium' to satisfy the ZodError
         model: 'medium', 
         
         debug: true,
@@ -68,17 +67,14 @@ export default function BgRemover() {
         }
       };
 
-      // @ts-ignore
       const blob = await runModel(file, config);
       const url = URL.createObjectURL(blob);
-      
       setProcessedImage(url);
       setProcessedBlob(blob); 
       setStatusText("Done!");
     } catch (err: any) {
-      console.error("Full Error Object:", err);
-      // If it fails, we show the real error message on screen
-      setError(`Failed: ${JSON.stringify(err.message || err)}`);
+      console.error(err);
+      setError(`Failed: ${err.message}`);
     } finally {
       setIsProcessing(false);
     }

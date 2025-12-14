@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, Video, FileText, Sparkles, Music, ArrowRight } from "lucide-react";
+import { Search, Video, FileText, Sparkles, Music, ArrowRight, Lock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 
@@ -30,11 +30,11 @@ export default function ActionsGrid({ onSelectTool }: ActionsGridProps) {
       keywords: ["convert", "mp4", "mp3", "mov", "pdf", "change", "format"]
     },
     {
-      id: "remove-bg",
-      title: "Magic Remover",
-      desc: "Remove backgrounds locally using AI.",
-      icon: <Sparkles className="text-purple-500" />,
-      keywords: ["remove", "background", "ai", "transparent", "cutout", "delete"]
+      id: "pdf-tools", // Moved UP to 2nd position
+      title: "PDF Tools",
+      desc: "Merge, Split & Sign PDFs.",
+      icon: <FileText className="text-red-500" />,
+      keywords: ["pdf", "merge", "split", "sign"]
     },
     {
       id: "transcribe",
@@ -44,11 +44,12 @@ export default function ActionsGrid({ onSelectTool }: ActionsGridProps) {
       keywords: ["transcribe", "text", "speech", "audio"]
     },
     {
-      id: "pdf-tools",
-      title: "PDF Tools",
-      desc: "Merge, Split & Sign PDFs.",
-      icon: <FileText className="text-red-500" />,
-      keywords: ["pdf", "merge", "split", "sign"]
+      id: "remove-bg", // Moved DOWN to 4th position
+      title: "Magic Remover",
+      desc: "Under Maintenance", // Updated text
+      icon: <Sparkles className="text-purple-500" />,
+      keywords: ["remove", "background", "ai", "transparent", "cutout", "delete"],
+      disabled: true // Explicitly disabled
     }
   ];
 
@@ -67,7 +68,7 @@ export default function ActionsGrid({ onSelectTool }: ActionsGridProps) {
             <Search className="ml-4 text-slate-500" />
             <Input 
                 className="border-none bg-transparent text-lg h-12 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-slate-500 w-full text-white"
-                placeholder="What do you want to do? (e.g. 'Remove background')" 
+                placeholder="What do you want to do? (e.g. 'Convert video')" 
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 autoFocus
@@ -80,17 +81,20 @@ export default function ActionsGrid({ onSelectTool }: ActionsGridProps) {
              <div 
                 key={tool.id}
                 onClick={() => !tool.disabled && onSelectTool(tool.id)}
-                className={`group p-6 rounded-3xl border border-slate-800 bg-slate-900/40 hover:bg-slate-800/60 transition-all cursor-pointer flex items-center gap-6
-                    ${tool.disabled ? "opacity-50 grayscale cursor-not-allowed" : "hover:scale-[1.02] hover:shadow-xl hover:shadow-orange-500/5 hover:border-slate-700"}
+                className={`group p-6 rounded-3xl border transition-all flex items-center gap-6
+                    ${tool.disabled 
+                        ? "border-slate-800 bg-slate-900/20 opacity-40 grayscale cursor-not-allowed" // Disabled Styles
+                        : "border-slate-800 bg-slate-900/40 hover:bg-slate-800/60 cursor-pointer hover:scale-[1.02] hover:shadow-xl hover:shadow-orange-500/5 hover:border-slate-700" // Active Styles
+                    }
                 `}
              >
-                <div className="w-16 h-16 rounded-2xl bg-black flex items-center justify-center shadow-inner">
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-inner ${tool.disabled ? "bg-slate-900" : "bg-black"}`}>
                     {tool.icon}
                 </div>
                 <div className="flex-1">
                     <h3 className="text-xl font-bold text-slate-200 group-hover:text-white transition-colors flex items-center gap-2">
                         {tool.title}
-                        {tool.disabled && <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded-full text-slate-500">Soon</span>}
+                        {tool.disabled && <Lock size={14} className="text-slate-500" />}
                     </h3>
                     <p className="text-sm text-slate-500 group-hover:text-slate-400">
                         {tool.desc}
