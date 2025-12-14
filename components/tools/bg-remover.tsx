@@ -47,6 +47,7 @@ export default function BgRemover() {
     setStatusText("Initializing Engine...");
 
     try {
+      // Ensure we treat the library as 'any' to avoid TS errors
       const imgly: any = await import("@imgly/background-removal");
       
       let runModel = imgly.default;
@@ -54,9 +55,15 @@ export default function BgRemover() {
       if (typeof runModel !== 'function') runModel = imgly;
 
       const config = {
-        // FIXED: Switched to JSDelivr (Supports COOP/COEP Headers)
+        // 1. Use JSDelivr (Bypasses CORS & Vercel limits)
         publicPath: 'https://cdn.jsdelivr.net/npm/@imgly/background-removal-data@1.3.0/dist/',
         
+        // 2. CRITICAL: We MUST specify the model to stop it from fetching 'resources.json'
+        model: 'isnet_fp16', 
+        
+        // 3. Force CPU to avoid WebGPU bugs
+        device: 'cpu',
+
         progress: (key: string, current: number, total: number) => {
              const percent = total > 0 ? Math.round((current / total) * 100) : 0;
              setStatusText(`Downloading ${percent}%`);
