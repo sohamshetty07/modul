@@ -61,7 +61,7 @@ export default function BgRemover() {
       const modelPath = `${origin}/models/`;
 
       const config: Config = {
-        publicPath: modelPath, // Points to /public/models/
+        publicPath: `${window.location.origin}/models/`, // Must have trailing slash
         
         // PROGRESS TRACKING
         progress: (key: string, current: number, total: number) => {
