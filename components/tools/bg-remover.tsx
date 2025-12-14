@@ -55,9 +55,8 @@ export default function BgRemover() {
       if (typeof runModel !== 'function') runModel = imgly;
 
       const config: Config = {
-        // CHANGED: We now point to the high-speed JSDelivr CDN
-        // This solves the Vercel 150MB limit AND the 404 errors.
-        publicPath: 'https://cdn.jsdelivr.net/npm/@imgly/background-removal-data@1.0.1/dist/',
+        // FIXED: Point to 'latest' so we get the missing 'resources.json' file
+        publicPath: 'https://cdn.jsdelivr.net/npm/@imgly/background-removal-data@latest/dist/',
         
         progress: (key: string, current: number, total: number) => {
              const percent = total > 0 ? Math.round((current / total) * 100) : 0;
