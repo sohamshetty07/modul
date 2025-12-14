@@ -6,6 +6,8 @@ import { Upload, X, Download, Loader2, Sparkles, Layers, Pencil, Check, Copy, Re
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast"; 
+// We import the config type if available, or just use any to avoid TS hassle with the library
+import type { Config } from "@imgly/background-removal";
 
 export default function BgRemover() {
   const [file, setFile] = useState<File | null>(null);
@@ -17,13 +19,9 @@ export default function BgRemover() {
   
   const [fileNameDisplay, setFileNameDisplay] = useState("");
   const [isRenaming, setIsRenaming] = useState(false);
-  const [baseUrl, setBaseUrl] = useState("");
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setBaseUrl(window.location.origin);
-    }
-  }, []);
+  // Note: We don't strictly need state for baseUrl if we access window inside the handler, 
+  // but it's fine to keep if you use it elsewhere.
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
@@ -46,25 +44,34 @@ export default function BgRemover() {
     if (!file) return;
     setIsProcessing(true);
     setError(null);
-    setStatusText("Loading Local Engine...");
+    setStatusText("Initializing Engine...");
 
     try {
-      const imgly: any = await import("@imgly/background-removal");
+      // Dynamic import to avoid SSR issues
+      const imgly = await import("@imgly/background-removal");
       
+      // Handle different export structures (ESM/CJS compatibility)
       let runModel = imgly.default;
+      // @ts-ignore
       if (typeof runModel !== 'function') runModel = imgly.removeBackground;
       if (typeof runModel !== 'function') runModel = imgly;
 
-      const config = {
-        // FIXED: Point to local 'public/models' folder
-        // Since we are same-origin, CORS errors will disappear.
-        publicPath: `${baseUrl}/models/`, 
+      // Robust URL generation
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const modelPath = `${origin}/models/`;
+
+      const config: Config = {
+        publicPath: modelPath, // Points to /public/models/
         
+        // PROGRESS TRACKING
         progress: (key: string, current: number, total: number) => {
              const percent = total > 0 ? Math.round((current / total) * 100) : 0;
-             setStatusText(`Processing: ${percent}%`);
+             setStatusText(`Loading ${key}: ${percent}%`);
         },
-        debug: true
+        
+        debug: true, // Keep debug logs in console
+        device: 'cpu', // Safer for broad compatibility
+        model: 'isnet_fp16' // Explicitly use the model we downloaded
       };
 
       // @ts-ignore
@@ -75,8 +82,8 @@ export default function BgRemover() {
       setProcessedBlob(blob); 
       setStatusText("Done!");
     } catch (err: any) {
-      console.error(err);
-      setError("Error processing image. Check console for details.");
+      console.error("Full Error Object:", err);
+      setError(`Processing Failed: ${err.message || "Unknown error"}`);
     } finally {
       setIsProcessing(false);
     }

@@ -19,12 +19,13 @@ const nextConfig = {
                 ],
             },
             {
-                // 2. CACHE CONTROL (For your heavy AI & Video engines)
-                source: '/:path*(ffmpeg|transformers.min.js)',
+                // 2. CACHE CONTROL (Expanded for ONNX and WASM)
+                // Matches any path ending in .wasm, .onnx, .js, or containing ffmpeg
+                source: '/:path*(.*\\.(?:wasm|onnx|js)|ffmpeg)',
                 headers: [
                     {
                         key: 'Cache-Control',
-                        value: 'public, max-age=31536000, immutable', // Cache for 1 Year
+                        value: 'public, max-age=31536000, immutable',
                     },
                 ],
             },
