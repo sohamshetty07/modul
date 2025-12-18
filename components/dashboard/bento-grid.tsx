@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation"; 
 import { useFileStore } from "@/hooks/use-file-transfer";
 import { cn } from "@/lib/utils";
@@ -17,12 +17,11 @@ import {
   UploadCloud,
   Video,
   Search,
-  Ghost,
-  ArrowUpRight
+  Ghost
 } from "lucide-react";
 
 // --- 1. INTELLIGENT TOOL REGISTRY ---
-// We add a 'keywords' array to each tool for "semantic" search
+// Semantic keywords allow users to find tools by intent (e.g., 'censor' for Magic Remover)
 const TOOLS = [
   {
     id: "converter",
@@ -113,17 +112,36 @@ export default function BentoGrid() {
   const setPreloadedFile = useFileStore((state) => state.setPreloadedFile);
   const [activeDrop, setActiveDrop] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Ref for focus management
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // --- 2. SEARCH LOGIC ---
+  // --- 2. KEYBOARD SHORTCUT LOGIC ---
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Focus search on '/' key press, unless already typing in an input
+      if (e.key === "/" && 
+          document.activeElement?.tagName !== "INPUT" && 
+          document.activeElement?.tagName !== "TEXTAREA") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // --- 3. SEARCH LOGIC ---
   const filteredTools = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
     if (!q) return TOOLS;
 
     return TOOLS.filter((tool) => {
-      if (tool.name.toLowerCase().includes(q)) return true;
-      if (tool.desc.toLowerCase().includes(q)) return true;
-      if (tool.keywords.some(k => k.includes(q))) return true; // Intelligent Keyword Match
-      return false;
+      const nameMatch = tool.name.toLowerCase().includes(q);
+      const descMatch = tool.desc.toLowerCase().includes(q);
+      const keywordMatch = tool.keywords.some(k => k.includes(q));
+      return nameMatch || descMatch || keywordMatch;
     });
   }, [searchQuery]);
 
@@ -140,24 +158,27 @@ export default function BentoGrid() {
   return (
     <div className="w-full max-w-7xl mx-auto h-full pb-10 px-4 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       
-      {/* 3. SEARCH BAR UI */}
+      {/* 4. SEARCH BAR UI */}
       <div className="relative max-w-lg mx-auto group">
          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
             <Search className="text-slate-500 group-focus-within:text-orange-500 transition-colors" size={18} />
          </div>
          <Input 
+            ref={searchInputRef}
             placeholder="Search tools (e.g., 'crop audio', 'compress pdf', 'blur face')..." 
             className="pl-10 h-12 bg-slate-900/50 border-slate-800 text-slate-200 focus-visible:ring-orange-500/50 rounded-xl transition-all hover:bg-slate-900"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
          />
-         {/* Visual Hint */}
+         {/* Visual Hint for Shortcut */}
          <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-            <span className="text-[10px] font-mono text-slate-600 border border-slate-800 rounded px-1.5 py-0.5 opacity-50">/</span>
+            <span className="text-[10px] font-mono text-slate-500 bg-slate-800 border border-slate-700 rounded-md px-2 py-0.5 shadow-sm group-focus-within:hidden transition-all">
+                /
+            </span>
          </div>
       </div>
 
-      {/* 4. GRID RENDER */}
+      {/* 5. GRID RENDER */}
       {filteredTools.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filteredTools.map((tool) => (
@@ -172,7 +193,7 @@ export default function BentoGrid() {
                 tool.hoverBorderClass,
                 activeDrop === tool.name && "scale-[0.98] ring-4 ring-white/10 z-50",
                 tool.isLarge ? "p-8 col-span-1 md:col-span-2 lg:col-span-2 row-span-2" : "p-6 col-span-1 row-span-1 flex flex-col justify-between",
-                tool.className // Handles span-2 logic for utilities
+                tool.className 
               )}
             >
               {/* DRAG OVERLAY */}
@@ -229,7 +250,7 @@ export default function BentoGrid() {
           ))}
         </div>
       ) : (
-        /* 5. EMPTY STATE */
+        /* 6. EMPTY STATE */
         <div className="text-center py-20 border border-dashed border-slate-800 rounded-3xl bg-slate-900/20 animate-in zoom-in-95">
             <div className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-800">
                 <Ghost className="text-slate-600" size={32} />
