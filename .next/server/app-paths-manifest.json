@@ -1,3 +1,8 @@
 {
-  "/page": "app/page.js"
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/manifest.webmanifest/route": "app/manifest.webmanifest/route.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/opengraph-image.png/route": "app/opengraph-image.png/route.js",
+  "/page": "app/page.js",
+  "/studio/[tool]/page": "app/studio/[tool]/page.js"
 }

@@ -2,33 +2,39 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css"; 
 import { Toaster } from "@/components/ui/toaster";
+import { PrivacyShield } from "@/components/dashboard/privacy-shield";
 
 const inter = Inter({ subsets: ["latin"] });
 
-// 1. VIEWPORT CONFIG (Critical for PWA "App-like" feel)
-// This prevents zooming on inputs and sets the browser theme color
+// 1. VIEWPORT CONFIG (Critical for PWA "Bunker Mode" experience)
 export const viewport: Viewport = {
-  themeColor: "#000000",
+  themeColor: "#000000", // Matches your bg-black
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  userScalable: false,
+  userScalable: false, // Prevents zooming, feels native
+  viewportFit: "cover", // Ensures full screen on notched iPhones
 };
 
 export const metadata: Metadata = {
-  // 2. BASIC METADATA
-  title: "Modul. Studio | Privacy-First Media Tools",
-  description: "The privacy-first media studio. Convert, remove backgrounds, and transcribe audio, run entirely on your device.",
+  // 2. UPDATED MISSION METADATA
+  title: "Modul. Studio | The Privacy-First Media OS",
+  description: "Bunker Mode enabled. 100% local processing for video, audio, and documents using WASM and Edge AI.",
   
   // 3. PWA CONFIGURATION
-  manifest: "/manifest.json", // Links to the file we created
+  // Next.js 15 app/manifest.ts generates this route automatically:
+  manifest: "/manifest.webmanifest", 
+  
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent", // Makes the app extend behind the notch
-    title: "Modul.", // The name below the icon on iOS Home Screen
+    statusBarStyle: "black-translucent", 
+    title: "Modul.",
+    startupImage: [
+       // Optional: You can add specific startup images here later
+    ] 
   },
 
-  // 4. ICONS (Preserved your detailed setup)
+  // 4. ICONS & BRANDING
   icons: {
     icon: '/favicon.ico',
     shortcut: '/favicon-16x16.png',
@@ -56,8 +62,8 @@ export const metadata: Metadata = {
 
   // 5. OPENGRAPH / SOCIAL
   openGraph: {
-    title: "Modul. Studio | Privacy-First Media Tools",
-    description: "The privacy-first media studio. Convert, remove backgrounds, and transcribe audio, run entirely on your device.",
+    title: "Modul. Studio | The Privacy-First Media OS",
+    description: "Convert, edit, and redact media without your data ever leaving your browser.",
     url: "https://modul-eight.vercel.app", 
     siteName: "Modul. Studio",
     locale: 'en-GB', 
@@ -71,11 +77,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    // Added 'dark' class to html and basic background styles to body 
-    // to prevent white flashes during page loads on mobile.
     <html lang="en" className="dark">
-      <body className={`${inter.className} bg-black text-slate-200 antialiased`}>
+      <body className={`${inter.className} bg-black text-slate-200 antialiased selection:bg-orange-500/30`}>
+        {/* Main Application Content */}
         {children}
+        
+        {/* Real-time Network Monitor (Module A: Privacy Shield) */}
+        <PrivacyShield />
+        
+        {/* Notifications */}
         <Toaster />
       </body>
     </html>

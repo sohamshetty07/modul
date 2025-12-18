@@ -1,11 +1,38 @@
+import withPWA from "@ducanh2912/next-pwa";
+
 /** @type {import('next').NextConfig} */
+const pwaConfig = withPWA({
+  dest: "public",
+  disable: process.env.NODE_ENV === "development",
+  register: true,
+  skipWaiting: true,
+  workboxOptions: {
+    runtimeCaching: [
+      {
+        urlPattern: /^https:\/\/(?:fonts\.(?:googleapis|gstatic)\.com|cdnjs\.cloudflare\.com)\/.*/i,
+        handler: "CacheFirst",
+        options: {
+          cacheName: "external-static-libs",
+          expiration: { maxEntries: 20, maxAgeSeconds: 365 * 24 * 60 * 60 },
+        },
+      },
+      {
+        urlPattern: /\.(?:wasm|onnx|js)$/i,
+        handler: "CacheFirst",
+        options: {
+          cacheName: "local-wasm-core",
+          expiration: { maxEntries: 10, maxAgeSeconds: 30 * 24 * 60 * 60 },
+        },
+      },
+    ],
+  },
+});
+
 const nextConfig = {
-    // We removed the webpack/CopyPlugin block because we are now using the CDN.
-    
     async headers() {
         return [
             {
-                // 1. GLOBAL SECURITY HEADERS (Essential for FFmpeg & SharedArrayBuffer)
+                // Global Security Headers (Essential for FFmpeg/WASM)
                 source: '/(.*)',
                 headers: [
                     {
@@ -19,8 +46,7 @@ const nextConfig = {
                 ],
             },
             {
-                // 2. CACHE CONTROL (Expanded for ONNX and WASM)
-                // Matches any path ending in .wasm, .onnx, .js, or containing ffmpeg
+                // Cache Control for WASM/ONNX files
                 source: '/:path*(.*\\.(?:wasm|onnx|js)|ffmpeg)',
                 headers: [
                     {
@@ -33,4 +59,4 @@ const nextConfig = {
     },
 };
 
-export default nextConfig;
+export default pwaConfig(nextConfig);

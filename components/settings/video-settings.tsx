@@ -1,12 +1,13 @@
 "use client";
 
+import { memo } from "react";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface VideoSettingsProps {
-  quality: number; // Used for CRF (Compression)
+  quality: number; // 0-100 (Where 100 is Best Quality / Lowest CRF)
   setQuality: (val: number) => void;
   resize: number; // Used for Resolution scale
   setResize: (val: number) => void;
@@ -14,20 +15,29 @@ interface VideoSettingsProps {
   setMute: (val: boolean) => void;
 }
 
-export default function VideoSettings({ quality, setQuality, resize, setResize, mute, setMute }: VideoSettingsProps) {
+function VideoSettings({ quality, setQuality, resize, setResize, mute, setMute }: VideoSettingsProps) {
+  
+  // Helper to visualize quality
+  const getQualityLabel = (q: number) => {
+    if (q >= 90) return "Lossless-ish";
+    if (q >= 75) return "High Quality";
+    if (q >= 50) return "Medium / Balanced";
+    return "Low Quality (Smallest Size)";
+  };
+
   return (
     <div className="p-4 bg-slate-950/50 rounded-xl space-y-4 border border-slate-800 animate-in slide-in-from-top-2">
       <div className="grid grid-cols-2 gap-4">
         
-        {/* Compression Level */}
+        {/* Quality / CRF Slider */}
         <div className="space-y-3">
           <div className="flex justify-between items-center">
-            <Label className="text-xs text-slate-400">Compression (CRF)</Label>
-            <span className="text-xs text-orange-500 font-mono">
-                {quality > 80 ? 'Low' : quality > 50 ? 'Med' : 'High'}
+            <Label className="text-xs text-slate-400">Quality</Label>
+            <span className="text-xs text-orange-500 font-mono text-right truncate ml-2">
+                {getQualityLabel(quality)}
             </span>
           </div>
-          {/* Reverse slider: High value = Better Quality (Lower CRF) */}
+          {/* Slider: 0 to 100 */}
           <Slider 
             value={[quality]} 
             onValueChange={(val) => setQuality(val[0])} 
@@ -37,7 +47,7 @@ export default function VideoSettings({ quality, setQuality, resize, setResize, 
           />
         </div>
 
-        {/* Resolution */}
+        {/* Resolution Selector */}
         <div className="space-y-3">
           <Label className="text-xs text-slate-400">Resolution</Label>
           <Select value={resize.toString()} onValueChange={(val) => setResize(Number(val))}>
@@ -56,17 +66,20 @@ export default function VideoSettings({ quality, setQuality, resize, setResize, 
 
       {/* Audio Toggle */}
       <div className="flex items-center justify-between pt-2 border-t border-slate-800/50">
-          <Label className="text-xs text-slate-400">Remove Audio</Label>
+          <Label className="text-xs text-slate-400">Remove Audio Track</Label>
           <Switch 
              checked={mute} 
              onCheckedChange={setMute}
-             className="data-[state=checked]:bg-orange-500" 
+             className="data-[state=checked]:bg-orange-500 scale-90" 
           />
       </div>
       
       <p className="text-[10px] text-slate-500 italic">
-        * Lower resolution drastically improves conversion speed.
+        * Lowering resolution is the most effective way to speed up conversion.
       </p>
     </div>
   );
 }
+
+// Export using memo to prevent flickering when parent Progress state changes
+export default memo(VideoSettings);

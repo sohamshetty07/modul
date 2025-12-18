@@ -1,4 +1,4 @@
-// core/utils.ts
+// core/utils/utils.ts
 
 export type FileCategory = 'video' | 'audio' | 'image' | 'pdf' | 'text' | 'unknown';
 
@@ -9,6 +9,13 @@ export function formatBytes(bytes: number, decimals = 2): string {
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+}
+
+// NEW: Required for Screen Recorder & Audio Studio
+export function formatTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
 export function getFileExtension(fileName: string): string {

@@ -1,8 +1,8 @@
-# Modul. Studio
+# Modul. Studio (v2.0)
 
-![Modul. Studio Banner](public/apple-icon.png)
+![Modul Studio Banner](https://socialify.git.ci/sohamshetty07/modul/image?description=1&descriptionEditable=The%20Privacy-First%20Media%20OS.%20Zero%20Data%20Exfiltration.&font=Inter&language=1&name=1&owner=1&pattern=Circuit%20Board&theme=Dark)
 
-**The Privacy-First Media Studio.** Convert, Edit, and Transcribe media without your data ever leaving your device.
+**The Privacy-First Media OS.** Convert, Edit, Encrypt, and Transcribe media without your data ever leaving your device.
 
 [Live Demo](https://modul-eight.vercel.app) · [Report Bug](https://github.com/sohamshetty07/modul/issues) · [Request Feature](https://github.com/sohamshetty07/modul/issues)
 
@@ -10,85 +10,91 @@
 
 ## 🚀 About The Project
 
-**Modul.** is a serverless media processing suite built with Next.js 15. Unlike traditional online converters that upload files to a cloud server, Modul runs advanced processing logic—including AI models and video encoding—directly in the user's browser using **WebAssembly (WASM)** and **WebWorkers**.
+**Modul.** is a serverless media processing suite built with **Next.js 15**. Unlike traditional online tools that require you to upload files to a cloud server, Modul brings the server logic _to your browser_.
 
-### Why?
-* **Privacy:** Files never leave `localhost`. No uploads, no data retention.
-* **Speed:** No upload/download wait times. Zero latency processing.
-* **Cost:** $0 server costs for processing. It scales infinitely because it uses the *user's* CPU/GPU.
+It runs industry-standard engines—like **FFmpeg** for video and **Whisper AI** for transcription—directly in your browser using **WebAssembly (WASM)** and **WebWorkers**.
 
-## ✨ Features
+### 🔒 The "Bunker Mode" Philosophy
 
-### 1. Universal Converter 🎥
-Powered by a custom **FFmpeg.wasm** engine.
-* Convert Video (MP4, MOV, MKV, GIF)
-* Convert Audio (MP3, WAV, AAC)
-* Convert Images (PNG, JPG, WEBP)
-* Compress files with granular quality/resize controls.
+- **Zero Trust:** Files never leave `localhost`. No uploads, no data retention.
+- **Offline First:** Disconnect your Wi-Fi and keep working. The app is fully cached.
+- **Serverless:** There is no backend to hack. Your CPU is the server.
 
-### 2. Magic Remover 🪄
-Background removal running locally using **@imgly/background-removal**.
-* Process high-res images instantly.
-* Runs in a separate thread to prevent UI freezing.
+---
 
-### 3. Audio Transcriber 🎙️
-Speech-to-text powered by **Transformers.js** (OpenAI Whisper model).
-* Runs quantized ONNX models in the browser.
-* Supports timestamped transcription.
+## ✨ Features Grid
 
-### 4. PDF Tools 📄
-Full-featured PDF manipulation using **pdf-lib** and **jspdf**.
-* **Merge:** Combine multiple PDFs.
-* **Split:** Extract specific pages with a visual selector.
-* **Compress:** Reduce PDF file size via canvas re-rendering.
-* **To Images:** Convert PDF pages to a ZIP of JPGs.
+### 🎥 Media Station
 
-### 5. Progressive Web App (PWA) 📱
-* Installable on iOS and Android.
-* Offline capability.
-* Native app-like feel (No browser UI).
+- **Universal Converter:** Convert Video (MP4, MKV, MOV), Audio (MP3, WAV), and Images (WEBP, GIF) locally using `ffmpeg.wasm`.
+- **Audio Studio:** Professional waveform editor. Trim, Denoise, and Normalize audio recordings visually.
+- **Screen Recorder:** Capture your screen and microphone instantly. No extensions, no cloud uploads.
+
+### 🧠 AI & Privacy
+
+- **Transcriber:** Offline Speech-to-Text using OpenAI's **Whisper** model (via `transformers.js` & ONNX).
+- **Magic Remover:** Privacy-first redaction. Blur faces, credit cards, or sensitive text from images instantly.
+- **The Vault:** AES-GCM Client-side encryption. Securely lock files with a password before sharing them.
+
+### 💼 Office & Utility
+
+- **PDF Tools:** Full manipulation suite. Merge, Split, Compress, and Convert PDFs to images.
+- **Dev Utilities:** Offline JSON<>CSV converter, Base64 encoder/decoder, and Wi-Fi QR Code Generator.
+
+### 📱 Progressive Web App (PWA)
+
+- Installable on iOS and Android.
+- Works completely offline.
+- Native app-like feel with zero browser UI.
 
 ---
 
 ## 🛠️ Tech Stack
 
-* **Framework:** [Next.js 15 (App Router)](https://nextjs.org/)
-* **Language:** TypeScript
-* **Styling:** Tailwind CSS + [shadcn/ui](https://ui.shadcn.com/)
-* **Core Engines:**
-    * `@ffmpeg/ffmpeg` (Video Processing)
-    * `@xenova/transformers` (AI Transcription)
-    * `@imgly/background-removal` (Computer Vision)
-    * `pdf-lib` (PDF Manipulation)
+- **Framework:** [Next.js 15 (App Router)](https://nextjs.org/)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS + [shadcn/ui](https://ui.shadcn.com/)
+- **Core Engines:**
+  - `@ffmpeg/ffmpeg` (Video Processing)
+  - `@xenova/transformers` & `onnxruntime-web` (AI Inference)
+  - `wavesurfer.js` (Audio Visualization)
+  - `pdf-lib` & `jspdf` (PDF Manipulation)
+  - `qrcode.react` (Utility Generation)
 
 ---
 
 ## ⚡ Getting Started
 
 ### Prerequisites
-* Node.js 18+ (Required for Next.js 15)
+
+- Node.js 18+ (Required for Next.js 15)
 
 ### Installation
 
 1.  **Clone the repo**
+
     ```bash
     git clone [https://github.com/sohamshetty07/modul.git](https://github.com/sohamshetty07/modul.git)
     cd modul
     ```
 
 2.  **Install dependencies**
+
     ```bash
     npm install
+    # or
+    bun install
     ```
 
 3.  **Run the development server**
+
     ```bash
     npm run dev
     ```
 
 4.  Open [http://localhost:3000](http://localhost:3000) with your browser.
 
-> **Note on SharedArrayBuffer:** > To run FFmpeg.wasm locally, this project uses specific HTTP headers (`Cross-Origin-Embedder-Policy` and `Cross-Origin-Opener-Policy`). These are configured in `next.config.mjs`. If you deploy to a platform other than Vercel, ensure these headers are set.
+> **Note on SharedArrayBuffer:** > To run FFmpeg.wasm locally, this project uses specific HTTP headers (`Cross-Origin-Embedder-Policy` and `Cross-Origin-Opener-Policy`). These are configured in `next.config.ts`. If you deploy to a platform other than Vercel, ensure these headers are set correctly.
 
 ---
 
@@ -124,8 +130,9 @@ Distributed under the MIT License. See `LICENSE` for more information.
 ## 👤 Author
 
 **Soham Shetty**
-* GitHub: [@sohamshetty07](https://github.com/sohamshetty07)
+
+- GitHub: [@sohamshetty07](https://github.com/sohamshetty07)
 
 ---
 
-*Built with ❤️ and way too much coffee.*
+_Built with ❤️ and way too much coffee._
